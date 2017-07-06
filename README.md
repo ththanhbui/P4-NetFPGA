@@ -27,17 +27,11 @@
     @NETFPGA_LICENSE_HEADER_END@
 
 
+![P4-NetFPGA-logo](./P4-NetFPGA_logo.png)
 
-P4-NetFPGA
-==========
+This repository provides an environment to compile P4 programs to the NetFPGA
+SUME platform. See the following link for documentation:
 
-This repository hosts projects based on the P4-NetFPGA SUME workflow provided
-by the Xilinx SDNet tools. It also brings Vivado support up to 2016.4 The repo
-is based on the NetFPGA-SUME-live repository. See the following link:
 https://github.com/NetFPGA/NetFPGA-SUME-public/wiki
-
-See contrib-projects/sume-sdnet-switch/README for more details about working
-with the P4-NetFPGA tools.
-
 
 
