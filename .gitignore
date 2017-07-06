@@ -1,0 +1,13 @@
+*.o
+*.so
+*.pyc
+*.axi
+*.log
+*.coe
+*.bak
+
+vivado.jou
+component.xml
+rom_data.txt
+xgui/
+ip_proj/

@@ -1,0 +1,456 @@
+#
+# Copyright (c) 2017 Stephen Ibanez
+# All rights reserved.
+#
+# This software was developed by Stanford University and the University of Cambridge Computer Laboratory 
+# under National Science Foundation under Grant No. CNS-0855268,
+# the University of Cambridge Computer Laboratory under EPSRC INTERNET Project EP/H040536/1 and
+# by the University of Cambridge Computer Laboratory under DARPA/AFRL contract FA8750-11-C-0249 ("MRC2"), 
+# as part of the DARPA MRC research programme.
+#
+# @NETFPGA_LICENSE_HEADER_START@
+#
+# Licensed to NetFPGA C.I.C. (NetFPGA) under one or more contributor
+# license agreements.  See the NOTICE file distributed with this work for
+# additional information regarding copyright ownership.  NetFPGA licenses this
+# file to you under the NetFPGA Hardware-Software License, Version 1.0 (the
+# "License"); you may not use this file except in compliance with the
+# License.  You may obtain a copy of the License at:
+#
+#   http://www.netfpga-cic.org
+#
+# Unless required by applicable law or agreed to in writing, Work distributed
+# under the License is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR
+# CONDITIONS OF ANY KIND, either express or implied.  See the License for the
+# specific language governing permissions and limitations under the License.
+#
+# @NETFPGA_LICENSE_HEADER_END@
+#
+
+
+P4-NetFPGA SUME Infrastructure using Xilinx SDNet:
+--------------------------------------------------
+
+This project provides an environment to develop and test P4 programs using
+SDNet in the NetFPGA SUME design.
+
+The workflow is as follows:
+    1. update enviornment variables & source the settings script
+        $ cd NetFPGA-SUME-SDNet/tools/
+        - edit: settings.sh (esp. SUME_FOLDER, P4_PROJECT_NAME)
+        $ source ./settings.sh
+ 
+    2. write P4 program and commands.txt in projects/${PROJECT_NAME}/src/ folder 
+
+    3. write gen_testdata.py script in projects/${PROJECT_NAME}/testdata/ folder.
+       This script is supposed to create test packets that will be used for the 
+       SDNet simulation as well as the SUME simualtions. The applied test packets
+       are in src.pcap and the expected packets are in dst.pcap.
+
+       The gen_testdata.py script should also generate the Tuple_in.txt
+       Tuple_expect.txt files used by the SDNet simulation. These files 
+       contain the input and output metadata for each packet that passes 
+       through the switch. The sss_sdnet_tuples.py module in the ${SUME_SDNET}/bin
+       folder is designed to make it easy to generate the metadata tuples for 
+       these files.
+
+    4. generate the SDNet module and test data from your P4 source and 
+       gen_testdata.py script
+         $ cd $SUME_SDNET/sw/sume && make   <-- only need to do this once
+         $ cd $P4_PROJECT_DIR
+         $ make
+
+    5. run the SDNet simulation and make sure that everything passes
+         $ cd nf_sume_sdnet_ip/SimpleSumeSwitch
+         $ ./vivado_sim.bash 
+         -- or -- 
+         $ ./vivado_sim_gui.bash 
+         - repeat steps 2 - 5 until simulation passes
+
+    6. install the SDNet module with SUME wrapper as a SUME library
+       core. Also make config_writes.py scripts which is used in the
+       SUME simulations
+         $ cd $P4_PROJECT_DIR
+         $ make uninstall_sdnet && make install_sdnet
+         $ make config_writes
+
+    7. compile TCAM IP
+        $ cd $SUME_FOLDER/lib/hw/xilinx/cores/tcam_v1_1_0/
+        $ make update
+        - note: if you want to verify the TCAM IP you can run 'make sim'
+        $ make
+
+    8. compile CAM IP
+        $ cd $SUME_FOLDER/lib/hw/xilinx/cores/cam_v1_1_0/
+        $ make update
+        - note: if you want to verify the CAM IP you can run 'make sim'
+        $ make
+
+    9. build the SUME library cores 
+        $ cd $SUME_FOLDER && make
+  
+    10. write SUME simulations in the $NF_DESIGN_DIR/test/ directory.
+        See example test for learning_switch project -- sim_learning_default 
+        $ cd $NF_DESIGN_DIR/test/sim_learning_default
+        - set up the test directory
+        $ make 
+
+    11. run SUME simulation
+        $ cd $SUME_FOLDER/tools/scripts/
+        $ ./nf_test.py sim --major learning --minor default
+        -- or --
+        $ ./nf_test.py sim --major learning --minor default --gui
+
+    12. make bitstream
+        $ cd $NF_DESIGN_DIR
+        $ make
+
+    13. build and load the SUME drivers
+        [root@nf-test109 ~]# cd $DRIVER_FOLDER
+        [root@nf-test109 sume_riffa_v1_0_0]# make all
+        [root@nf-test109 sume_riffa_v1_0_0]# make install
+        [root@nf-test109 sume_riffa_v1_0_0]# modprobe sume_riffa
+        [root@nf-test109 sume_riffa_v1_0_0]# lsmod sume_riffa
+
+There are four sample projects in the $SUME_SDNET/projects directory:
+  (1) control_regs - this is a simple project that was created to test basic register
+      functionality.  
+
+  (2) learning_switch - this is a learning L2 switch. Updates to P4 tables must be
+      performed by the control plane. For this reason, the design makes use of the
+      DMA engine to communicate with the host CPU which runs the control plane software.
+
+  (3) int - this is an inital implementation of the initial In-band Network Telemetry 
+      specification directly over Ethernet. As the library of extern modules increases
+      and more measurement capabilities are added to the SUME switch, this initial 
+      implementation will be updated. 
+
+  (4) switch_calc - this designs uses the switch as a simple (line-rate) calculator.
+      A custom Calc_t header is defined which contains 2 operand fields, 1 opCode field,
+      and 1 result field. The supported operations include: ADD, SUBTRACT, LOOKUP a key,
+      ADD registered value, SET register value. It uses many of the basic features of
+      of the workflow and is a good place to get started.
+
+Dependencies:
+  - p4c-sdnet
+  - sdnet
+  - python-scapy
+  - all of NetFPGA-SUME dependencies see:
+    - https://github.com/NetFPGA/NetFPGA-SUME-public/wiki/Reference-Operating-System-Setup-Guide#additional-required-packages
+  - Vivado 2016.4
+
+######################
+### Detailed Notes ###
+######################
+
+---------------------------
+-- Environment Variables --
+---------------------------
+
+The NetFPGA-SUME-SDNet/tools/settings.sh script exports all of the environment
+variables used for the project. Here are some of the important ones:
+
+${P4_PROJECT_NAME} - The name of the P4 project currently being used. This name
+is used to identify both the name of the P4 project directory as well as the top
+level P4 source file.
+
+${NF_PROJECT_NAME} - The name of the SUME project directory that contains all of
+the files pertaining to testing and HDL development for the SUME platform. Currently, 
+the only supported target is simple_sume_switch. Each P4 project should have its
+own local copy of simple_sume_switch.
+
+${SUME_FOLDER} - This should be set to the installation location of the
+NetFPGA-SUME-SDNet repository. This is the top level folder that corresponds to
+the NetFPGA-SUME-live folder.
+
+${SUME-SDNET} - This is the main directory of the project that contains all of the 
+scripts, templates, and tools that are used in the workflow. It also contains all
+of the P4 projects. It is located in NetFPGA-SUME-SDNet/contrib-projects/
+
+${P4_PROJECT_DIR} - Identifies the directory of the current P4 project being used. 
+
+${NF_DESIGN_DIR} - Identifies the directory of the local simple_sume_switch
+
+These environment variables can be used to easily navigate the directory structure.
+
+------------------------------------------
+-- P4_PROJECT_DIR Directory Description --
+------------------------------------------
+
+${P4_PROJECT_DIR}
+|-- src: contains the P4 source files and the commands.txt file
+|-- testdata: contains the gen_testdata.py script 
+|-- sw: contains various software that is generated by the tools
+|   |-- API: contains the CAM API generated by SDNet for interacting with the
+|   |        tables in the P4 program. Also contains a sample C file with starter
+|   |        code that can be used as a starting point for writing a C-based
+|   |        control-plane for the switch. 
+|   |-- CLI: run $ ./P4_SWITCH_CLI.py to start up an interactive command line tool
+|   |        that can be used to query compile time information about the generated
+|   |        design, as well as interact with the physical switch on the FPGA (i.e.
+|   |        read/write registers, add/remove table entries, etc.)
+|-- simple_sume_switch: the SUME project that contains SUME simulation infrastructure
+|       as well as some source HDL files.
+|-- nf_sume_sdnet_ip: the directory that is created by SDNet. It contains all of the
+|       verilog files and a testbench that can be used for initial verification.
+
+
+-------------------------
+-- Writing P4 Programs --
+-------------------------
+
+This repository currently supports the p4c-sdnet P4_16 frontend compiler. So P4
+programs must be written using P4_16. See [1] for a link to the current standard.
+
+SimpleSumeSwitch:
+-----------------
+The SimpleSumeSwitch is the P4 architecture that is defined for the NetFPGA SUME.
+The architecture description can be found in /opt/Xilinx/SDNet/2016.4/data/p4include/sume_switch.p4
+or wherever you have installed Xilinx SDNet. The architecture consists of a single
+parser, single match-action pipeline, and single deparser. 
+
+The sume_metadata, which corresponds directly to the tuser bus in the SUME reference_switch 
+design, is defined as follows: 
+
+/* standard sume switch metadata */
+struct sume_metadata_t {
+    bit<16> pkt_len; // unsigned int
+    bit<8> src_port; // one-hot encoded: {DMA, NF3, DMA, NF2, DMA, NF1, DMA, NF0}
+    bit<8> dst_port; // one-hot encoded: {DMA, NF3, DMA, NF2, DMA, NF1, DMA, NF0}
+    bit<1> drop;
+    bit<95> unused;
+}
+
+
+Stateful Atoms:
+---------------
+The P4-NetFPGA workflow provides a set of stateful atoms that P4 programs can instantiate
+as extern functions. Currently, the supported atoms are:
+
+****************************************************************************************
+(1) RW - Atomically read or overwrite an entry of a register array
+****************************************************************************************
+Instantiation:
+```
+#define REG_READ 8w0
+#define REG_WRITE 8w1
+@CYCLES(1)
+@CONTROLBITS(1)
+extern void <reg_name>_reg_rw<T, D>(in T index, 
+                                    in D newVal, 
+                                    in bit<8> opCode, 
+                                    out D result);
+```
+index - the array index to access. Note that the bit width of the index field dictates
+        the depth of the register. For example, an index field with a bit width of 4
+        results in a register array with 16 entries.
+newVal - the new value to write into the register at the specified index. This field is
+        only used if opCode == REG_WRITE.
+opCode - either REG_READ or REG_WRITE
+result - the output, if REG_READ is specified then result = current value of register
+        at the specified index. If REG_WRITE is speicifed then result = newValue 
+
+@CYCLES - allows P4 programmer to specify the number of clock cycles to complete the
+        extern operation. This should always be 1 for register externs. 
+@CONTROLBITS - allows P4 programmer to specify the width of the address space allocated
+        to this register. This should theoretically always be equal to the width of the
+        index field, but due to a current limitation in the register control signaling,
+        a value of 1 is sufficient.
+
+****************************************************************************************
+(2) RAW - Atomically read, add to, or overwrite an entry of a register array
+****************************************************************************************
+Instantiation:
+```
+#define REG_READ 8w0
+#define REG_WRITE 8w1
+#define REG_ADD  8w2
+@CYCLES(1)
+@CONTROLBITS(1)
+extern void <reg_name>_reg_raw<T, D>(in T index, 
+                                     in D newVal,
+                                     in D incVal,
+                                     in bit<8> opCode,
+                                     out D result);
+```
+index - the array index to access. Note that the bit width of the index field dictates
+        the depth of the register. For example, an index field with a bit width of 4
+        results in a register array with 16 entries.
+newVal - the new value to write into the register at the specified index. This field is
+        only used if opCode == REG_WRITE.
+incVal - the amount to add to the register at the speicifed index. This field is only
+        used if opCode == REG_ADD 
+opCode - either REG_READ, REG_WRITE, or REG_ADD
+result - the latest value of the register at the specified index (i.e. after modification) 
+
+@CYCLES - allows P4 programmer to specify the number of clock cycles to complete the
+        extern operation. This should always be 1 for register externs. 
+@CONTROLBITS - allows P4 programmer to specify the width of the address space allocated
+        to this register. This should theoretically always be equal to the width of the
+        index field, but due to a current limitation in the register control signaling,
+        a value of 1 is sufficient.
+
+****************************************************************************************
+(3) PRAW - Atomically add to or overwrite the register at the specified index if a predicate
+           is true. Otherwise, read the current value.
+****************************************************************************************
+Instantiation:
+```
+#define REG_READ 8w0
+#define REG_WRITE 8w1
+#define REG_ADD  8w2
+
+#define EQ_RELOP    8w0
+#define NEQ_RELOP   8w1
+#define GT_RELOP    8w2
+#define LT_RELOP    8w3
+@CYCLES(1)
+@CONTROLBITS(1)
+extern void <reg_name>_reg_praw<T, D>(in T index,
+                                      in D newVal,
+                                      in D incVal,
+                                      in bit<8> opCode,
+                                      in D compVal,
+                                      in bit<8> relOp,
+                                      out D result,
+                                      out bit<1> boolean);
+```
+index - the array index to access. Note that the bit width of the index field dictates
+        the depth of the register. For example, an index field with a bit width of 4
+        results in a register array with 16 entries.
+newVal - the new value to write into the register at the specified index. This field is
+        only used if opCode == REG_WRITE.
+incVal - the amount to add to the register at the speicifed index. This field is only
+        used if opCode == REG_ADD 
+opCode - either REG_READ, REG_WRITE, or REG_ADD
+compVal - the value to compare to the current value of the register at the specified index
+relOp - the operation to use to compare compVal to the current value of the register at
+        the specified index. compVal and relOp together define the predicate that decides
+        whether or not the register value will be modified. If the predicate is true then
+        the register may be modified, otherwise it will not be.
+result - the latest value of the register at the specified index (i.e. after modification) 
+boolean - bit that indicates whether or not the predicate was true (1) or false (0)
+
+@CYCLES - allows P4 programmer to specify the number of clock cycles to complete the
+        extern operation. This should always be 1 for register externs. 
+@CONTROLBITS - allows P4 programmer to specify the width of the address space allocated
+        to this register. This should theoretically always be equal to the width of the
+        index field, but due to a current limitation in the register control signaling,
+        a value of 1 is sufficient.
+
+See the control_regs project for example usage. 
+
+[1] http://p4.org/wp-content/uploads/2016/12/P4_16-prerelease-Dec_16.html
+
+----------------------
+-- Writing Testdata --
+----------------------
+
+The gen_testdata.py script MUST generate:
+- src.pcap - the packets to feed through the P4 switch
+- dst.pcap - the packets to expect at the output of the P4 switch
+- Tuples_in.txt - the metadata associated with each packet in src.pcap 
+- Tuples_expect.txt - the metadata associated with each packet in dst.pcap
+The files listed above are used in the initial SDNet simulation.
+
+It is recommended that the gen_testdata.py script also generate:
+- nf0_applied.pcap ... nf3_applied.pcap
+- nf0_expected.pcap ... nf3_expected.pcap
+These are files that can be used in the SUME simulations. The script
+should also set the time field for each applied packet so that they can be
+applied in the correct order for the SUME simulation.
+
+The ${NF_DESIGN_DIR}/test/sim_learning_default/run.py script runs a SUME simulation.
+It may make use of the packet traces generated by the gen_tesdata.py script 
+or it may create new packets and use those. See [2] for more details.
+
+[2] https://github.com/NetFPGA/NetFPGA-SUME-public/wiki/NetFPGA-SUME-Simulations
+
+---------------
+-- API / CLI --
+---------------
+
+Both a python and C API are generated by the workflow and and can be used to 
+manipulate the registers and tables instantiated in the P4 program. This workflow
+currently supports API functions for exact match (CAM) tables and work is currently
+on going to support API functions for ternary match and LPM match tables as well. 
+
+The developer can choose whether they want to write their control-plane in C or in Python.
+The tools generate a file in the ${P4_PROJECT_DIR}/sw/API folder called starter.c,
+which is meant to serve as a starter file for developers who want to use the C API.
+
+The tools also generates a file in ${P4_PROJECT_DIR}/sw/CLI called p4_tables_api.py
+that exposes a python API for developers who perfer that option.
+
+The tools generate an interactive command line environment that can be used to 
+query compile time information about the generated P4 design, as well as interact
+with the physical switch when it is loaded onto the FPGA. Run: $ ./P4_SWITCH_CLI.py
+to enter the environment, type help to see a list of commands and their documentation.
+
+------------------
+-- Known Issues --
+------------------
+- Due to a limitation in the current control signaling for registers, only the first
+  entry of a register array can be accessed from the control plane.
+- Register values are limited to 32-bits as this is the width of the SUME control data bus
+- The current register operations: Read_or_Write, Read_Add_Write, and Predicated_Read_Add_Write, 
+  are rather limiting. There is on going work to expose more expressive interfaces.
+- Support for manipulating ternary and longest prefix match tables from Python as well 
+  as the interactive command line tool is currently unavailable. 
+- $ cd $NF_DESIGN_DIR && make 
+  This command sucessfully compiles the bitstream but export hardware fails. The 
+  bitstream is located in the vivado project under $NF_DESIGN_DIR/hw/project/
+
+---------------------
+-- Getting Started --
+---------------------
+
+It is highly recommended that new users take a look at the example projects and
+familiarize themselves with the environment. Walk all the way through the process
+of running SUME simulations for the learning_switch example project. Once the SUME
+simulations are working, you are 90% of the way there :) 
+
+Here is the list of commands to walk through for the learning switch (using SDNet 2016.4.0) 
+$ cd $P4_PROJECT_DIR
+$ make
+$ cd nf_sume_sdnet_ip/SimpleSumeSwitch/
+$ ./vivado_sim.bash
+$ rm S_BRIDGERs.HDL/S_BRIDGER_for_broadcast_tuple_in_request.vp
+$ ./vivado_sim.bash 
+$ cd $P4_PROJECT_DIR
+$ make config_writes 
+$ make uninstall_sdnet
+$ make install_sdnet
+$ cd ${NF_DESIGN_DIR}/test/sim_learning_default/
+$ make
+$ cd $SUME_FOLDER
+$ ./tools/scripts/nf_test.py sim --major learning --minor default
+
+NOTE: I had to run $ rm S_BRIDGERs.HDL/S_BRIDGER_for_broadcast_tuple_in_request.vp
+due to a bug in SDNet 2016.4.0, which should be fixed soon.
+
+When you want to create a new P4 project there is a script to help out with that.
+Simply run: 
+  $ $SUME_SDNET/bin/make_new_p4_proj.py <P4_PROJECT_NAME>
+Which will create a new template project in the $SUME_SDNET/projects directory
+
+It is recommended that users add the following lines to their ~/.bashrc file
+(adjusted to use your specific paths):
+```
+##### Vivado #####
+source /opt/Xilinx/Vivado/2016.4/settings64.sh
+
+# point to the Xilinx license file so we can use Vivado
+export XILINXD_LICENSE_FILE= ...
+export LM_LICENSE_FILE= ...
+
+#### NetFPGA SUME #####
+source ~/projects/NetFPGA-SUME-SDNet/tools/settings.sh
+
+#### SDNet ####
+export PATH=/opt/Xilinx/SDNet/2016.4/bin:$PATH
+source /opt/Xilinx/SDNet/2016.4/settings64.sh
+export XILINXD_LICENSE_FILE= ... # add SDNet license file
+export LM_LICENSE_FILE= ... # add SDNet license file
+```
+
