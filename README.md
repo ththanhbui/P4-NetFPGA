@@ -27,7 +27,7 @@
     @NETFPGA_LICENSE_HEADER_END@
 
 
-![P4-NetFPGA-logo](https://github.com/NetFPGA/P4-NetFPGA-public/wiki/P4-NetFPGA_logo.png)
+![P4-NetFPGA-logo](./P4-NetFPGA_logo.png)
 
 This repository provides an environment to compile P4 programs to the NetFPGA
 SUME platform. See the following link for documentation:
