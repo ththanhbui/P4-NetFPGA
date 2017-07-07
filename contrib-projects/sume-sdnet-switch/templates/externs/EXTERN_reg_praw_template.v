@@ -67,12 +67,12 @@ module @MODULE_NAME@
 )
 (
     // Data Path I/O
-    input                                   clk_lookup,
-    input                                   clk_lookup_rst_high, 
-    input                                   tuple_in_@EXTERN_NAME@_input_VALID,
-    input   [2*REG_WIDTH+INDEX_WIDTH+8:0]    tuple_in_@EXTERN_NAME@_input_DATA,
-    output                                  tuple_out_@EXTERN_NAME@_output_VALID,
-    output  [REG_WIDTH-1:0]                tuple_out_@EXTERN_NAME@_output_DATA,
+    input                                            clk_lookup,
+    input                                            clk_lookup_rst_high, 
+    input                                            tuple_in_@EXTERN_NAME@_input_VALID,
+    input   [3*REG_WIDTH+INDEX_WIDTH+2*OP_WIDTH:0]   tuple_in_@EXTERN_NAME@_input_DATA,
+    output                                          tuple_out_@EXTERN_NAME@_output_VALID,
+    output  [REG_WIDTH:0]                         tuple_out_@EXTERN_NAME@_output_DATA,
 
     // Control Path I/O
     input                                     clk_control,

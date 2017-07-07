@@ -71,7 +71,7 @@ module @MODULE_NAME@
     input                                   tuple_in_@EXTERN_NAME@_input_VALID,
     input   [3*OP_WIDTH + 5*REG_WIDTH + 3*INDEX_WIDTH : 0]    tuple_in_@EXTERN_NAME@_input_DATA,
     output                                  tuple_out_@EXTERN_NAME@_output_VALID,
-    output  [REG_WIDTH-1:0]                tuple_out_@EXTERN_NAME@_output_DATA,
+    output  [REG_WIDTH:0]                   tuple_out_@EXTERN_NAME@_output_DATA,
 
     // Control Path I/O
     input                                     clk_control,
