@@ -56,8 +56,6 @@ all: clean
 	
 config_writes:
 	${SUME_SDNET}/bin/gen_config_writes.py ${SDNET_OUT_DIR}/${P4_SWITCH}/config_writes.txt ${P4_SWITCH_BASE_ADDR} testdata
-	# build the rwaxi executable to write values to addresses
-	make -C ${SUME_FOLDER}/lib/sw/std/apps/sume_riffa_v1_0_0/	
 
 # install the SDNet core as a NetFPGA-SUME-SDNet library core 
 install_sdnet: uninstall_sdnet
