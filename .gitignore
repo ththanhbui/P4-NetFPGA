@@ -11,3 +11,17 @@ component.xml
 rom_data.txt
 xgui/
 ip_proj/
+
+lib/hw/contrib/cores/nf_sume_sdnet_ip/
+lib/hw/xilinx/cores/cam_v1_1_0/xapp1151_Param_CAM.zip
+lib/hw/xilinx/cores/cam_v1_1_0/xapp1151_cam_v1_1/
+lib/hw/xilinx/cores/cam_v1_1_0/hdl/
+lib/hw/xilinx/cores/tcam_v1_1_0/xapp1151_Param_CAM.zip
+lib/hw/xilinx/cores/tcam_v1_1_0/xapp1151_cam_v1_1/
+lib/hw/xilinx/cores/tcam_v1_1_0/hdl/
+lib/sw/std/driver/sume_riffa_v1_0_0/.tmp_versions/
+lib/sw/std/driver/sume_riffa_v1_0_0/modules.order
+lib/sw/std/driver/sume_riffa_v1_0_0/sume_riffa.ko
+lib/sw/std/driver/sume_riffa_v1_0_0/sume_riffa.mod.c
+
+
