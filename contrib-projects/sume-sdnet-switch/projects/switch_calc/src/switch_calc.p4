@@ -171,7 +171,7 @@ control TopPipe(inout Parsed_packet p,
             // Read or write register
  
             // Pre-register access: define metadata
-            bit<INDEX_WIDTH> index = p.calc.op1;
+            bit<INDEX_WIDTH> index = p.calc.op1[INDEX_WIDTH-1:0];
             calcField_t newVal;
             bit<8> opCode;
             calcField_t regVal;

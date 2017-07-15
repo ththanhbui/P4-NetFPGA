@@ -44,7 +44,7 @@ typedef bit<48> EthernetAddress;
 // switchID register
 @Xilinx_MaxLatency(1)
 @Xilinx_ControlWidth(2)
-extern void switchID_reg_rw(in bit<2> index, in bit<32> newVal, in bit<8> opCode, out bit<32> result);
+extern void switchID_reg_rw(in bit<2> index, in bit<31> newVal, in bit<8> opCode, out bit<31> result);
 
 // timestamp generation
 @Xilinx_MaxLatency(1)
@@ -148,6 +148,7 @@ parser TopParser(packet_in b,
     state start {
         b.extract(p.ethernet);
         user_metadata.unused = 0;
+        digest_data.unused = 0;
         transition select(p.ethernet.etherType) {
             INT_TYPE: parse_int;
             default: reject;
