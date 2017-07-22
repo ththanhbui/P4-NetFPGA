@@ -108,17 +108,17 @@ module nf_axis_converter
    localparam M_S_RATIO_COUNT = C_M_AXIS_DATA_WIDTH / C_S_AXIS_DATA_WIDTH;
    localparam S_M_RATIO_COUNT = C_S_AXIS_DATA_WIDTH / C_M_AXIS_DATA_WIDTH;
 
-   (* mark_debug = "true" *) wire in_fifo_nearly_full;
+   wire in_fifo_nearly_full;
    reg  in_fifo_rd_en;
    wire in_fifo_empty;
-   (* mark_debug = "true" *) wire [C_S_AXIS_DATA_WIDTH - 1:0] s_axis_tdata_fifo;
-   (* mark_debug = "true" *) wire [((C_S_AXIS_DATA_WIDTH / 8)) - 1:0] s_axis_tkeep_fifo;
-   (* mark_debug = "true" *) wire s_axis_tlast_fifo;
+   wire [C_S_AXIS_DATA_WIDTH - 1:0] s_axis_tdata_fifo;
+   wire [((C_S_AXIS_DATA_WIDTH / 8)) - 1:0] s_axis_tkeep_fifo;
+   wire s_axis_tlast_fifo;
 
    reg  info_fifo_wr_en;
    reg  info_fifo_rd_en;
    wire info_fifo_empty;
-   (* mark_debug ="true"  *) wire info_fifo_nearly_full;
+   wire info_fifo_nearly_full;
    reg  [C_LEN_WIDTH - 1:0] length_in;
    reg  [C_LEN_WIDTH - 1:0] length_prev, length_prev_next;
    reg  [LENGTH_COUNTER_WIDTH:0] local_sum;

@@ -114,11 +114,11 @@ module nf_10g_attachment #(
  /////////////////////////////////////////////////////////////////////
 
  // rx_queue -> AXIS_converter
-wire [C_M_AXIS_DATA_WIDTH_INTERNAL-1:0]        m_axis_fifo_tdata;
-wire [(C_M_AXIS_DATA_WIDTH_INTERNAL/8)-1:0]    m_axis_fifo_tkeep;
-wire                                           m_axis_fifo_tvalid;
-wire                                           m_axis_fifo_tready;
-wire                                           m_axis_fifo_tlast;  
+(* mark_debug = "true" *) wire [C_M_AXIS_DATA_WIDTH_INTERNAL-1:0]        m_axis_fifo_tdata;
+(* mark_debug = "true" *) wire [(C_M_AXIS_DATA_WIDTH_INTERNAL/8)-1:0]    m_axis_fifo_tkeep;
+(* mark_debug = "true" *) wire                                           m_axis_fifo_tvalid;
+(* mark_debug = "true" *) wire                                           m_axis_fifo_tready;
+(* mark_debug = "true" *) wire                                           m_axis_fifo_tlast;  
   
  // AXIS_converter 64b@axis_clk -> tx_queue@axis_clk  
 (* mark_debug = "true" *) wire [C_S_AXIS_DATA_WIDTH_INTERNAL-1:0]        s_axis_fifo_tdata;

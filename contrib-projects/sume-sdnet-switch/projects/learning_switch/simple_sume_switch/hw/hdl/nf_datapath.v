@@ -316,8 +316,8 @@ module nf_datapath #(
     );
 
        
-    (* mark_debug = "true" *) wire [C_S_AXI_DATA_WIDTH-1:0] bytes_dropped;
-    (* mark_debug = "true" *) wire [5-1:0] pkt_dropped; 
+    wire [C_S_AXI_DATA_WIDTH-1:0] bytes_dropped;
+    wire [5-1:0] pkt_dropped; 
 
 //    assign nf0_q_size = 'd12;
 //    assign nf1_q_size = 'd13;
