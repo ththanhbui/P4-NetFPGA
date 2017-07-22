@@ -93,6 +93,7 @@ sume:
 	make -C $(LIB_HW_DIR)/std/cores/nf_10ge_interface_v1_0_0/
 	make -C $(LIB_HW_DIR)/contrib/cores/sss_fallthrough_small_fifo_v1_0_0/
 	make -C $(LIB_HW_DIR)/contrib/cores/sss_output_queues_v1_0_0/
+	make -C $(LIB_HW_DIR)/contrib/cores/input_arbiter_drr_v1_0_0/
 	@echo "/////////////////////////////////////////";
 	@echo "//Library cores created.";
 	@echo "/////////////////////////////////////////";

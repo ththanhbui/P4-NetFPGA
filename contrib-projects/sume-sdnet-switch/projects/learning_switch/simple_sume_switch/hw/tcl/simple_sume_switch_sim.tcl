@@ -71,11 +71,11 @@ set_property generate_synth_checkpoint false [get_files nf_sume_sdnet_ip.xci]
 reset_target all [get_ips nf_sume_sdnet_ip]
 generate_target all [get_ips nf_sume_sdnet_ip]
 
-create_ip -name input_arbiter -vendor NetFPGA -library NetFPGA -module_name input_arbiter_ip
-set_property -dict [list CONFIG.C_BASEADDR $INPUT_ARBITER_BASEADDR] [get_ips input_arbiter_ip]
-set_property generate_synth_checkpoint false [get_files input_arbiter_ip.xci]
-reset_target all [get_ips input_arbiter_ip]
-generate_target all [get_ips input_arbiter_ip]
+create_ip -name input_arbiter_drr -vendor NetFPGA -library NetFPGA -module_name input_arbiter_drr_ip
+set_property -dict [list CONFIG.C_BASEADDR $INPUT_ARBITER_BASEADDR] [get_ips input_arbiter_drr_ip]
+set_property generate_synth_checkpoint false [get_files input_arbiter_drr_ip.xci]
+reset_target all [get_ips input_arbiter_drr_ip]
+generate_target all [get_ips input_arbiter_drr_ip]
 
 create_ip -name sss_output_queues -vendor NetFPGA -library NetFPGA -module_name sss_output_queues_ip
 set_property -dict [list CONFIG.C_BASEADDR $OUTPUT_QUEUES_BASEADDR] [get_ips sss_output_queues_ip]
@@ -267,6 +267,17 @@ add_wave $nf_datapath/m_axis_4_tlast -color cyan
 #add_wave top_tb/top_sim/M02_AXI_wready
 #add_wave top_tb/top_sim/M02_AXI_wstrb
 #add_wave top_tb/top_sim/M02_AXI_wvalid
+
+# Input Arbiter signals
+set input_arbiter_ip top_tb/top_sim/nf_datapath_0/input_arbiter_drr_v1_0/inst/
+add_wave_divider {Input Arbiter Signals}
+add_wave $input_arbiter_ip/dbg_ddr_count0
+add_wave $input_arbiter_ip/dbg_ddr_count1
+add_wave $input_arbiter_ip/dbg_ddr_count2
+add_wave $input_arbiter_ip/dbg_ddr_count3
+add_wave $input_arbiter_ip/dbg_ddr_count4
+add_wave $input_arbiter_ip/cur_queue
+
 
 # Add SDNet Interface Signals
 set sdnet_ip top_tb/top_sim/nf_datapath_0/nf_sume_sdnet_wrapper_1/inst/SimpleSumeSwitch_inst/
