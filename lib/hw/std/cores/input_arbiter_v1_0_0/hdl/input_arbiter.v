@@ -188,14 +188,14 @@ module input_arbiter
    reg [NUM_QUEUES_WIDTH-1:0]          cur_queue_next;
 
    // SI: debug
-   (* mark_debug = "true" *) wire [NUM_QUEUES_WIDTH-1:0]  in_arb_cur_queue;
+   wire [NUM_QUEUES_WIDTH-1:0]  in_arb_cur_queue;
    assign in_arb_cur_queue = cur_queue;
 
    reg [NUM_STATES-1:0]                state;
    reg [NUM_STATES-1:0]                state_next;
 
    // SI: debug
-   (* mark_debug = "true" *) wire [NUM_STATES-1:0]  in_arb_state;
+   wire [NUM_STATES-1:0]  in_arb_state;
    assign in_arb_state = state;
 
    reg				       pkt_fwd_next;

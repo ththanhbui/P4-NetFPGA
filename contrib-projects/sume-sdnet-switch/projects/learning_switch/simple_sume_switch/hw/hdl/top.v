@@ -143,75 +143,75 @@
   //----------------------------------------------------------------------------------------------------------------//
 
   wire[C_DATA_WIDTH-1:0]      axis_i_0_tdata;
-  wire            axis_i_0_tvalid;
-  wire            axis_i_0_tlast;
-  wire[C_TUSER_WIDTH-1:0]     axis_i_0_tuser;
- wire[(C_DATA_WIDTH/8)-1:0]       axis_i_0_tkeep;
- wire            axis_i_0_tready;
+  (* mark_debug = "true" *) wire            axis_i_0_tvalid;
+  (* mark_debug = "true" *) wire            axis_i_0_tlast;
+  (* mark_debug = "true" *) wire[C_TUSER_WIDTH-1:0]     axis_i_0_tuser;
+  (* mark_debug = "true" *) wire[(C_DATA_WIDTH/8)-1:0]       axis_i_0_tkeep;
+  (* mark_debug = "true" *) wire            axis_i_0_tready;
 
-(* mark_debug = "true" *) wire[C_DATA_WIDTH-1:0]      axis_o_0_tdata;
-(* mark_debug = "true" *) wire            axis_o_0_tvalid;
-(* mark_debug = "true" *) wire            axis_o_0_tlast;
-(* mark_debug = "true" *) wire [C_TUSER_WIDTH-1:0]         axis_o_0_tuser;
-(* mark_debug = "true" *) wire[(C_DATA_WIDTH/8)-1:0]       axis_o_0_tkeep;
-(* mark_debug = "true" *) wire            axis_o_0_tready;
+  wire[C_DATA_WIDTH-1:0]      axis_o_0_tdata;
+  (* mark_debug = "true" *) wire            axis_o_0_tvalid;
+  (* mark_debug = "true" *) wire            axis_o_0_tlast;
+  (* mark_debug = "true" *) wire [C_TUSER_WIDTH-1:0]         axis_o_0_tuser;
+  (* mark_debug = "true" *) wire[(C_DATA_WIDTH/8)-1:0]       axis_o_0_tkeep;
+  (* mark_debug = "true" *) wire            axis_o_0_tready;
 
   wire[C_DATA_WIDTH-1:0]      axis_i_1_tdata;
-  wire            axis_i_1_tvalid;
-  wire            axis_i_1_tlast;
-  wire[C_TUSER_WIDTH-1:0]            axis_i_1_tuser;
-  wire[C_DATA_WIDTH/8-1:0]       axis_i_1_tkeep;
-  wire            axis_i_1_tready;
+  (* mark_debug = "true" *) wire            axis_i_1_tvalid;
+  (* mark_debug = "true" *) wire            axis_i_1_tlast;
+  (* mark_debug = "true" *) wire[C_TUSER_WIDTH-1:0]            axis_i_1_tuser;
+  (* mark_debug = "true" *) wire[C_DATA_WIDTH/8-1:0]       axis_i_1_tkeep;
+  (* mark_debug = "true" *) wire            axis_i_1_tready;
 
- (* mark_debug = "true" *)  wire[C_DATA_WIDTH-1:0]      axis_o_1_tdata;
- (* mark_debug = "true" *)  wire            axis_o_1_tvalid;
- (* mark_debug = "true" *)  wire            axis_o_1_tlast;
- (* mark_debug = "true" *)  wire [C_TUSER_WIDTH-1:0]           axis_o_1_tuser;
- (* mark_debug = "true" *)  wire[C_DATA_WIDTH/8-1:0]       axis_o_1_tkeep;
- (* mark_debug = "true" *)  wire            axis_o_1_tready;
+  wire[C_DATA_WIDTH-1:0]      axis_o_1_tdata;
+  (* mark_debug = "true" *)  wire            axis_o_1_tvalid;
+  (* mark_debug = "true" *)  wire            axis_o_1_tlast;
+  (* mark_debug = "true" *)  wire [C_TUSER_WIDTH-1:0]           axis_o_1_tuser;
+  (* mark_debug = "true" *)  wire[C_DATA_WIDTH/8-1:0]       axis_o_1_tkeep;
+  (* mark_debug = "true" *)  wire            axis_o_1_tready;
 
   wire[C_DATA_WIDTH-1:0]      axis_i_2_tdata;
-  wire            axis_i_2_tvalid;
-  wire            axis_i_2_tlast;
-  wire[C_TUSER_WIDTH-1:0]            axis_i_2_tuser;
-  wire[C_DATA_WIDTH/8-1:0]       axis_i_2_tkeep;
-  wire            axis_i_2_tready;
+  (* mark_debug = "true" *) wire            axis_i_2_tvalid;
+  (* mark_debug = "true" *) wire            axis_i_2_tlast;
+  (* mark_debug = "true" *) wire[C_TUSER_WIDTH-1:0]            axis_i_2_tuser;
+  (* mark_debug = "true" *) wire[C_DATA_WIDTH/8-1:0]       axis_i_2_tkeep;
+  (* mark_debug = "true" *) wire            axis_i_2_tready;
 
- (* mark_debug = "true" *)  wire[C_DATA_WIDTH-1:0]      axis_o_2_tdata;
- (* mark_debug = "true" *)  wire            axis_o_2_tvalid;
- (* mark_debug = "true" *)  wire            axis_o_2_tlast;
- (* mark_debug = "true" *)  wire [C_TUSER_WIDTH-1:0]         axis_o_2_tuser;
- (* mark_debug = "true" *)  wire[C_DATA_WIDTH/8-1:0]       axis_o_2_tkeep;
- (* mark_debug = "true" *)  wire            axis_o_2_tready;
+  wire[C_DATA_WIDTH-1:0]      axis_o_2_tdata;
+  (* mark_debug = "true" *)  wire            axis_o_2_tvalid;
+  (* mark_debug = "true" *)  wire            axis_o_2_tlast;
+  (* mark_debug = "true" *)  wire [C_TUSER_WIDTH-1:0]         axis_o_2_tuser;
+  (* mark_debug = "true" *)  wire[C_DATA_WIDTH/8-1:0]       axis_o_2_tkeep;
+  (* mark_debug = "true" *)  wire            axis_o_2_tready;
 
   wire[C_DATA_WIDTH-1:0]      axis_i_3_tdata;
-  wire            axis_i_3_tvalid;
-  wire            axis_i_3_tlast;
-  wire[C_TUSER_WIDTH-1:0]            axis_i_3_tuser;
-  wire[C_DATA_WIDTH/8-1:0]       axis_i_3_tkeep;
-  wire            axis_i_3_tready;
+  (* mark_debug = "true" *) wire            axis_i_3_tvalid;
+  (* mark_debug = "true" *) wire            axis_i_3_tlast;
+  (* mark_debug = "true" *) wire[C_TUSER_WIDTH-1:0]            axis_i_3_tuser;
+  (* mark_debug = "true" *) wire[C_DATA_WIDTH/8-1:0]       axis_i_3_tkeep;
+  (* mark_debug = "true" *) wire            axis_i_3_tready;
 
- (* mark_debug = "true" *)  wire[C_DATA_WIDTH-1:0]      axis_o_3_tdata;
- (* mark_debug = "true" *)  wire            axis_o_3_tvalid;
- (* mark_debug = "true" *)  wire            axis_o_3_tlast;
- (* mark_debug = "true" *)  wire [C_TUSER_WIDTH-1:0]         axis_o_3_tuser;
- (* mark_debug = "true" *)  wire[C_DATA_WIDTH/8-1:0]       axis_o_3_tkeep;
- (* mark_debug = "true" *)  wire            axis_o_3_tready;
+  wire[C_DATA_WIDTH-1:0]      axis_o_3_tdata;
+  (* mark_debug = "true" *)  wire            axis_o_3_tvalid;
+  (* mark_debug = "true" *)  wire            axis_o_3_tlast;
+  (* mark_debug = "true" *)  wire [C_TUSER_WIDTH-1:0]         axis_o_3_tuser;
+  (* mark_debug = "true" *)  wire[C_DATA_WIDTH/8-1:0]       axis_o_3_tkeep;
+  (* mark_debug = "true" *)  wire            axis_o_3_tready;
 
   // AXIS DMA interfaces
   wire [255:0]   axis_dma_i_tdata ;
-  wire [31:0]    axis_dma_i_tkeep ;
-  wire           axis_dma_i_tlast ;
-  wire           axis_dma_i_tready;
-  wire [255:0]   axis_dma_i_tuser ;
-  wire           axis_dma_i_tvalid;
+  (* mark_debug = "true" *) wire [31:0]    axis_dma_i_tkeep ;
+  (* mark_debug = "true" *) wire           axis_dma_i_tlast ;
+  (* mark_debug = "true" *) wire           axis_dma_i_tready;
+  (* mark_debug = "true" *) wire [255:0]   axis_dma_i_tuser ;
+  (* mark_debug = "true" *) wire           axis_dma_i_tvalid;
 
   wire [255:0]  axis_dma_o_tdata;
-  wire [31:0]   axis_dma_o_tkeep;
-  wire          axis_dma_o_tlast;
-  wire          axis_dma_o_tready;
-  wire [127:0]  axis_dma_o_tuser;
-  wire          axis_dma_o_tvalid;
+  (* mark_debug = "true" *) wire [31:0]   axis_dma_o_tkeep;
+  (* mark_debug = "true" *) wire          axis_dma_o_tlast;
+  (* mark_debug = "true" *) wire          axis_dma_o_tready;
+  (* mark_debug = "true" *) wire [127:0]  axis_dma_o_tuser;
+  (* mark_debug = "true" *) wire          axis_dma_o_tvalid;
   
  //----------------------------------------------------------------------------------------------------------------//
  // AXI Lite interface                                                                                                 //

@@ -140,7 +140,7 @@ output                                                          S_AXI_AWREADY
 (* mark_debug = "true" *) wire  [C_M_AXIS_TUSER_WIDTH-1:0]         sume_tuple_out_DATA; 
 (* mark_debug = "true" *) wire                                     digest_tuple_out_VALID; 
 (* mark_debug = "true" *) wire  [DIGEST_WIDTH-1:0]                 digest_tuple_out_DATA; 
-(* mark_debug = "true" *) wire  [DIGEST_WIDTH-1:0]                 digest_tuple_out_DATA_swap; 
+wire  [DIGEST_WIDTH-1:0]                 digest_tuple_out_DATA_swap; 
 
 //#####################
 //## debugging signals

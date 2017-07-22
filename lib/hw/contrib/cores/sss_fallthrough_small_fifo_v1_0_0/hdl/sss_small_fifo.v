@@ -73,9 +73,9 @@ reg [MAX_DEPTH_BITS - 1 : 0] rd_ptr;
 reg [MAX_DEPTH_BITS - 1 : 0] wr_ptr;
 //reg [MAX_DEPTH_BITS : 0] depth;
 
-(* mark_debug = "true" *) wire [MAX_DEPTH_BITS : 0] queue_depth_debug = depth;
-(* mark_debug = "true" *) wire wr_en_debug = wr_en;
-(* mark_debug = "true" *) wire rd_en_debug = rd_en;
+wire [MAX_DEPTH_BITS : 0] queue_depth_debug = depth;
+wire wr_en_debug = wr_en;
+wire rd_en_debug = rd_en;
 
 // Sample the data
 always @(posedge clk)

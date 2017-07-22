@@ -83,16 +83,16 @@ module tx_queue
     wire                                tlast_axi_i;
     wire                                tlast_axi_o;
  
-    (* mark_debug = "true" *) wire                                fifo_almost_full, info_fifo_full;
-    (* mark_debug = "true" *) wire                                fifo_empty, info_fifo_empty;
-    (* mark_debug = "true" *) reg                                 fifo_rd_en, info_fifo_rd_en;
-    (* mark_debug = "true" *) reg                                 info_fifo_wr_en;
-    (* mark_debug = "true" *) wire                                fifo_wr_en;       
+    wire                                fifo_almost_full, info_fifo_full;
+    wire                                fifo_empty, info_fifo_empty;
+    reg                                 fifo_rd_en, info_fifo_rd_en;
+    reg                                 info_fifo_wr_en;
+    wire                                fifo_wr_en;       
      
     reg                                 tx_dequeued_pkt_next;   
 
-    (* mark_debug = "true" *) reg  [2:0]                          state, state_next;
-    (* mark_debug = "true" *) reg                                 state1, state1_next;
+    reg  [2:0]                          state, state_next;
+    reg                                 state1, state1_next;
    
     wire [2:0]                          zero_padding;
 

@@ -246,9 +246,6 @@ module sss_output_queues
    reg [NUM_STATES-1:0]                state;
    reg [NUM_STATES-1:0]                state_next;
 
-   (* mark_debug = "true" *) wire [NUM_STATES-1:0] state_debug = state;
-   (* mark_debug = "true" *) wire [NUM_STATES-1:0] state_next_debug = state_next;
-
    reg [NUM_METADATA_STATES-1:0]       metadata_state[NUM_QUEUES-1:0];
    reg [NUM_METADATA_STATES-1:0]       metadata_state_next[NUM_QUEUES-1:0];
 
@@ -352,11 +349,11 @@ module sss_output_queues
    (* mark_debug = "true" *) wire send_dig_to_cpu;
    (* mark_debug = "true" *) wire [DIGEST_WIDTH-1:0] digest_data;
 
-   (* mark_debug = "true" *) wire [C_S_AXIS_DATA_WIDTH/8 + C_S_AXIS_DATA_WIDTH:0] data_queue_in[NUM_QUEUES-1:0];
+   wire [C_S_AXIS_DATA_WIDTH/8 + C_S_AXIS_DATA_WIDTH:0] data_queue_in[NUM_QUEUES-1:0];
    (* mark_debug = "true" *) wire [NUM_QUEUES-1:0] data_queue_wr_en;
-   (* mark_debug = "true" *) wire [C_S_AXIS_TUSER_WIDTH-1:0] metadata_queue_in[NUM_QUEUES-1:0];
+   wire [C_S_AXIS_TUSER_WIDTH-1:0] metadata_queue_in[NUM_QUEUES-1:0];
    (* mark_debug = "true" *) wire [NUM_QUEUES-1:0] metadata_queue_wr_en;
-   (* mark_debug = "true" *) wire [BUFFER_SIZE_WIDTH:0] data_queue_depth[NUM_QUEUES-1:0];
+   wire [BUFFER_SIZE_WIDTH:0] data_queue_depth[NUM_QUEUES-1:0];
 
    // ------------ Modules -------------
    localparam SEND_DIG_POS = 40; // 33; 

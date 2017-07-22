@@ -193,12 +193,12 @@ module output_queues
    // ------------- Regs/ wires -----------
 
    reg [NUM_QUEUES-1:0]                nearly_full;
-(* mark_debug = "true" *)  wire [NUM_QUEUES-1:0]               nearly_full_fifo;
-(* mark_debug = "true" *)  wire [NUM_QUEUES-1:0]               empty;
+   wire [NUM_QUEUES-1:0]               nearly_full_fifo;
+   wire [NUM_QUEUES-1:0]               empty;
 
    reg [NUM_QUEUES-1:0]                metadata_nearly_full;
-(* mark_debug = "true" *)  wire [NUM_QUEUES-1:0]               metadata_nearly_full_fifo;
-(* mark_debug = "true" *)  wire [NUM_QUEUES-1:0]               metadata_empty;
+   wire [NUM_QUEUES-1:0]               metadata_nearly_full_fifo;
+   wire [NUM_QUEUES-1:0]               metadata_empty;
 
    wire [C_M_AXIS_TUSER_WIDTH-1:0]             fifo_out_tuser[NUM_QUEUES-1:0];
    wire [C_M_AXIS_DATA_WIDTH-1:0]        fifo_out_tdata[NUM_QUEUES-1:0];
@@ -225,7 +225,7 @@ module output_queues
 
    reg [NUM_QUEUES-1:0] pkt_stored_next;
    reg [C_S_AXI_DATA_WIDTH-1:0] bytes_stored_next;
-(* mark_debug = "true" *)   reg [NUM_QUEUES-1:0] pkt_dropped_next;
+   reg [NUM_QUEUES-1:0] pkt_dropped_next;
    reg [C_S_AXI_DATA_WIDTH-1:0] bytes_dropped_next;
    reg [NUM_QUEUES-1:0] pkt_removed;
    reg [C_S_AXI_DATA_WIDTH-1:0] bytes_removed[NUM_QUEUES-1:0];
@@ -401,7 +401,7 @@ module output_queues
    			   ((s_axis_tuser[DST_POS + 1] | s_axis_tuser[DST_POS + 3] | s_axis_tuser[DST_POS + 5] | s_axis_tuser[DST_POS + 7]) << 4);
 
    // SI: debug
-   (* mark_debug = "true" *) wire dropping_pkt = |((nearly_full | metadata_nearly_full) & oq) & s_axis_tvalid & (state == IDLE);
+    wire dropping_pkt = |((nearly_full | metadata_nearly_full) & oq) & s_axis_tvalid & (state == IDLE);
 
    always @(*) begin
       state_next     = state;
