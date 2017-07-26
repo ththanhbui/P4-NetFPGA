@@ -51,46 +51,52 @@ input                               SUME_axi_tlast,
 input                               SUME_axi_tready,
 
 // output SDNet signals
-output                              SDNet_tuple_VALID,
+output reg                          SDNet_tuple_VALID,
 output                              SDNet_axi_TLAST
 
 );
 
+reg [1:0]   state;
+reg [1:0]   state_next;
 
-// registers to hold the value of tvalid and tlast on the previous clock cycle
-reg SUME_axi_tvalid_prev;
-reg SUME_axi_tlast_prev;
-reg SUME_axi_tready_prev;
+(* mark_debug = "true" *) wire [1:0] state_debug = state;
 
-// register to remember if tvalid has already gone high for this packet
-reg tvalid_has_gone_high;
+// states
+localparam FIRST = 0;
+localparam WAIT = 1; 
+
+always @(*) begin
+   state_next = state;
+   SDNet_tuple_VALID = 0;
+
+   case(state)
+     /* wait to complete first cycle of packet */
+     FIRST: begin
+         if (SUME_axi_tvalid & SUME_axi_tready) begin
+             SDNet_tuple_VALID = 1;
+             state_next = WAIT;
+         end
+     end
+
+     /* wait until last cycle of packet */
+     WAIT: begin
+         if (SUME_axi_tvalid & SUME_axi_tlast & SUME_axi_tready) begin
+             state_next = FIRST;
+         end
+     end // case: WAIT
+
+   endcase // case(state)
+end // always @ (*)
+
 
 always @(posedge axi_clk) begin
-    if (~axi_resetn) begin
-        SUME_axi_tvalid_prev <= 1'b0;
-        SUME_axi_tlast_prev <= 1'b0;
-        SUME_axi_tready_prev <= 1'b0;
-        tvalid_has_gone_high <= 1'b0;
-    end
-    else begin
-        SUME_axi_tvalid_prev <= SUME_axi_tvalid;
-        SUME_axi_tlast_prev <= SUME_axi_tlast;
-        SUME_axi_tready_prev <= SUME_axi_tready;
-        if (SUME_axi_tlast)
-            tvalid_has_gone_high <= 1'b0;
-        else if (SUME_axi_tvalid)
-            tvalid_has_gone_high <= 1'b1;
-        else
-            tvalid_has_gone_high <= tvalid_has_gone_high;
-    end
+   if(~axi_resetn) begin
+      state <= FIRST;
+   end
+   else begin
+      state <= state_next;
+   end
 end
-
-// tuple_in_VALID should be high whenever (tvalid goes high AND
-// it is the first time tvalid has gone high since tlast went high)
-// OR (tvalid stays high AND tlast was high on the previous cycle AND
-// tready was high on the previous cycle).
-// This lines up with the first word of each packet
-assign SDNet_tuple_VALID = (SUME_axi_tvalid & ~SUME_axi_tvalid_prev & ~tvalid_has_gone_high) | (SUME_axi_tvalid & SUME_axi_tvalid_prev & SUME_axi_tlast_prev & SUME_axi_tready_prev);
 
 
 // the SDNet_TLAST signal should only go high when TVALID is high
