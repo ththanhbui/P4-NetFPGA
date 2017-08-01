@@ -348,5 +348,16 @@ add_wave $sss_output_queues_ip/metadata_queue_in
 add_wave $sss_output_queues_ip/metadata_queue_wr_en
 add_wave $sss_output_queues_ip/metadata_rd_en
 
+add_wave $sss_output_queues_ip/nf0_q_size
+add_wave $sss_output_queues_ip/nf1_q_size
+add_wave $sss_output_queues_ip/nf2_q_size
+add_wave $sss_output_queues_ip/nf3_q_size
+add_wave $sss_output_queues_ip/dma_q_size
+add_wave $sss_output_queues_ip/state
+add_wave $sss_output_queues_ip/state_next
+add_wave $sss_output_queues_ip/oq
+add_wave $sss_output_queues_ip/drop_count
+
+
 
 run 65us
