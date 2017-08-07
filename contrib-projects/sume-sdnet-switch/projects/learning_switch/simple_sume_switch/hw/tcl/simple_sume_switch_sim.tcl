@@ -329,6 +329,7 @@ add_wave $nf_sume_sdnet_ip/m_axis_tlast
 
 add_wave_divider {SDNet Tuple-Out}
 add_wave $nf_sume_sdnet_ip/sume_tuple_out_VALID
+add_wave $nf_sume_sdnet_ip/digest_tuple_out_VALID
 add_wave $nf_sume_sdnet_ip/m_axis_tuser -radix hex
 add_wave $nf_sume_sdnet_ip/out_pkt_len
 add_wave $nf_sume_sdnet_ip/out_src_port -radix bin

@@ -50,7 +50,8 @@
  *        BRAM Output queues
  *        Outputs have a parameterizable width
  *
- *        This version does send the digest metadata over DMA
+ *        This is a modified version of the original netfpga output_queues module.
+ *        s_axis_tready = 0 until s_axis_tvalid is asserted. 
  *
  */
 
@@ -85,7 +86,7 @@ module sss_output_queues
     input [((C_S_AXIS_DATA_WIDTH / 8)) - 1:0] s_axis_tkeep,
     input [C_S_AXIS_TUSER_WIDTH-1:0] s_axis_tuser,
     input s_axis_tvalid,
-    output s_axis_tready,
+    output reg s_axis_tready,
     input s_axis_tlast,
 
     // Master Stream Ports (interface to TX queues)
@@ -206,14 +207,13 @@ module sss_output_queues
 
    // ------------- Regs/ wires -----------
 
-   /* Current tuser format:
-    *     [15:0]   pkt_len; // unsigned int
-    *     [23:16]  src_port; // one-hot encoded: {DMA, NF3, DMA, NF2, DMA, NF1, DMA, NF0}
-    *     [31:24]  dst_port; // one-hot encoded: {DMA, NF3, DMA, NF2, DMA, NF1, DMA, NF0}
-    *     [32]     drop;
-    *     [33]     send_dig_to_cpu;
-    *     [113:34] digest_data;
-    *     [127:114] unused;
+   /* Format of tuser signal:
+    *     [15:0]    pkt_len; // unsigned int
+    *     [23:16]   src_port; // one-hot encoded: {DMA, NF3, DMA, NF2, DMA, NF1, DMA, NF0}
+    *     [31:24]   dst_port; // one-hot encoded: {DMA, NF3, DMA, NF2, DMA, NF1, DMA, NF0}
+    *     [39:32]   drop; // only bit 32 is used
+    *     [47:40]   send_dig_to_cpu; // only bit 40 is used
+    *     [127:48]  digest_data;
     */
 
    // SI
@@ -234,10 +234,10 @@ module sss_output_queues
    wire [NUM_QUEUES-1:0] 	           fifo_out_tlast;
 
    wire [NUM_QUEUES-1:0]               rd_en;
-   wire [NUM_QUEUES-1:0]                wr_en;
+   reg [NUM_QUEUES-1:0]                wr_en;
 
    reg [NUM_QUEUES-1:0]                metadata_rd_en;
-   wire [NUM_QUEUES-1:0]                metadata_wr_en;
+   reg [NUM_QUEUES-1:0]                metadata_wr_en;
 
    reg [NUM_QUEUES-1:0]          cur_queue;
    reg [NUM_QUEUES-1:0]          cur_queue_next;
@@ -248,6 +248,8 @@ module sss_output_queues
 
    reg [NUM_METADATA_STATES-1:0]       metadata_state[NUM_QUEUES-1:0];
    reg [NUM_METADATA_STATES-1:0]       metadata_state_next[NUM_QUEUES-1:0];
+
+   reg                                                             first_word, first_word_next;
 
    reg [NUM_QUEUES-1:0] pkt_stored_next;
    reg [C_S_AXI_DATA_WIDTH-1:0] bytes_stored_next;
@@ -356,7 +358,7 @@ module sss_output_queues
    wire [BUFFER_SIZE_WIDTH:0] data_queue_depth[NUM_QUEUES-1:0];
 
    // ------------ Modules -------------
-   localparam SEND_DIG_POS = 40; // 33; 
+   localparam SEND_DIG_POS = 40; 
    assign send_dig_to_cpu = s_axis_tuser[SEND_DIG_POS];
    assign digest_data = s_axis_tuser[127:48];
 
@@ -368,6 +370,9 @@ module sss_output_queues
         We want to send the digest_data over DMA if the send_dig_to_cpu bit is set
         otherwise use the packet itself will be sent over DMA if the output queue
         field specifies one of the DMA queues.
+
+        If send_dig_to_cpu == 1'b1 then that digest data is actually written a clock cycle
+        early (i.e. when state == IDLE). 
       */
       assign data_queue_in[i] = ((i == NUM_QUEUES-1) & send_dig_to_cpu) ? 
                               {1'b1, 
@@ -378,15 +383,15 @@ module sss_output_queues
                                 s_axis_tdata};
 
       assign data_queue_wr_en[i] = ((i == NUM_QUEUES-1) & send_dig_to_cpu) ?
-                                   (s_axis_tvalid & s_axis_tready & ((state == IDLE)) ? 1'b1 : 1'b0) : // only write on the first word of the packet
+                                   (s_axis_tvalid & ((state == IDLE)) ? 1'b1 : 1'b0) : // only write on the first word of the packet
                                    wr_en[i];
 
       assign metadata_queue_in[i] = ((i == NUM_QUEUES-1) & send_dig_to_cpu) ?
                                     {96'b0, 8'b0000_0010, 8'b0, 16'd10} :
-                                    s_axis_tuser; 
+                                    s_axis_tuser;  
 
       assign metadata_queue_wr_en[i] = ((i == NUM_QUEUES-1) & send_dig_to_cpu) ?
-                                       (s_axis_tvalid & s_axis_tready & ((state == IDLE)) ? 1'b1 : 1'b0) :
+                                       (s_axis_tvalid & ((state == IDLE)) ? 1'b1 : 1'b0) :
                                        metadata_wr_en[i];
 
       sss_fallthrough_small_fifo
@@ -477,7 +482,12 @@ module sss_output_queues
 
    always @(*) begin
       state_next     = state;
-      cur_queue_next = cur_queue;    
+      cur_queue_next = cur_queue;
+      wr_en          = 0;
+      metadata_wr_en = 0;
+      s_axis_tready  = 0;
+      first_word_next = first_word;
+
       bytes_stored_next = 0;
       pkt_stored_next = 0;
       pkt_dropped_next = 0;
@@ -488,9 +498,10 @@ module sss_output_queues
         /* cycle between input queues until one is not empty */
         IDLE: begin
            cur_queue_next = oq;
-           if(s_axis_tvalid & s_axis_tready) begin
+           if(s_axis_tvalid) begin
               if(~|((nearly_full | metadata_nearly_full) & oq) && ~should_drop ) begin // All interesting oqs are NOT _nearly_ full (able to fit in the maximum packet).
                   state_next = WR_PKT;
+                  first_word_next = 1'b1;
 		  pkt_stored_next = oq;
 		  bytes_stored_next = s_axis_tuser[15:0];
               end
@@ -504,16 +515,23 @@ module sss_output_queues
 
         /* wait until eop */
         WR_PKT: begin
-            if(s_axis_tvalid & s_axis_tready) begin
+            s_axis_tready = 1;
+            if(s_axis_tvalid) begin
+                first_word_next = 1'b0;
+                wr_en = cur_queue;
+                if(first_word) begin
+                    metadata_wr_en = cur_queue;
+                end
                 if(s_axis_tlast) begin
                     state_next = IDLE;
                 end
-           end
+            end
         end // case: WR_PKT
 
         DROP: begin
-           if(s_axis_tvalid & s_axis_tlast & s_axis_tready) begin
-           	  state_next = IDLE;
+           s_axis_tready = 1;
+           if(s_axis_tvalid & s_axis_tlast) begin
+               state_next = IDLE;
            end
         end
 
@@ -521,18 +539,12 @@ module sss_output_queues
    end // always @ (*)
 
 
-assign s_axis_tready = ((~|(nearly_full | metadata_nearly_full) ) | (state == DROP)); 
-assign wr_en = !(s_axis_tvalid & s_axis_tready)  ? 0 : 
-               (state == IDLE) ? oq : 
-               (state == WR_PKT) ? cur_queue : 
-               0 ;
-assign metadata_wr_en = s_axis_tvalid & s_axis_tready & ((state == IDLE)) ? oq : 0;
-
-
    always @(posedge axis_aclk) begin
       if(~axis_resetn) begin
          state <= IDLE;
          cur_queue <= 0;
+         first_word <= 0;
+
  	 bytes_stored <= 0;
          pkt_stored <= 0;
          pkt_dropped <=0;
@@ -548,6 +560,8 @@ assign metadata_wr_en = s_axis_tvalid & s_axis_tready & ((state == IDLE)) ? oq :
       else begin
          state <= state_next;
          cur_queue <= cur_queue_next;
+         first_word <= first_word_next;
+
  	 bytes_stored <= bytes_stored_next;
          pkt_stored <= pkt_stored_next;
          pkt_dropped<= pkt_dropped_next;
