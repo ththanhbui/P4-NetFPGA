@@ -42,7 +42,7 @@
 module @PREFIX_NAME@_cpu_regs #
 (
 parameter C_BASE_ADDRESS        = @ADDR_WIDTH@'h0,
-parameter C_S_AXI_DATA_WIDTH    = @REG_WIDTH@,
+parameter C_S_AXI_DATA_WIDTH    = 32,
 parameter C_S_AXI_ADDR_WIDTH    = @ADDR_WIDTH@,
 parameter INDEX_WIDTH           = @INDEX_WIDTH@
 )
@@ -57,13 +57,13 @@ parameter INDEX_WIDTH           = @INDEX_WIDTH@
 
    // Register ports
     // Read Interface
-    input      [`REG_@PREFIX_NAME@_BITS]             ip2cpu_@PREFIX_NAME@_reg_data,
+    input      [C_S_AXI_DATA_WIDTH-1:0]              ip2cpu_@PREFIX_NAME@_reg_data,
     input      [`REG_@PREFIX_NAME@_INDEX_BITS]       ip2cpu_@PREFIX_NAME@_reg_index,
     input                                            ip2cpu_@PREFIX_NAME@_reg_valid,
     output reg [`REG_@PREFIX_NAME@_INDEX_BITS]    ipReadReq_@PREFIX_NAME@_reg_index,
     output reg                                    ipReadReq_@PREFIX_NAME@_reg_valid,
     // Write Interface
-    output reg [`REG_@PREFIX_NAME@_BITS]          cpu2ip_@PREFIX_NAME@_reg_data,
+    output reg [C_S_AXI_DATA_WIDTH-1:0]           cpu2ip_@PREFIX_NAME@_reg_data,
     output reg [`REG_@PREFIX_NAME@_INDEX_BITS]    cpu2ip_@PREFIX_NAME@_reg_index,
     output reg                                    cpu2ip_@PREFIX_NAME@_reg_valid,
     output reg                                    cpu2ip_@PREFIX_NAME@_reg_reset,
@@ -306,7 +306,7 @@ parameter INDEX_WIDTH           = @INDEX_WIDTH@
            if (reg_wren) begin //write event
              if (axi_awaddr < 2**INDEX_WIDTH) begin
                  //@PREFIX_NAME@ Register
-                 for ( byte_index = 0; byte_index <= (`REG_@PREFIX_NAME@_WIDTH/8-1); byte_index = byte_index +1)
+                 for ( byte_index = 0; byte_index <= (C_S_AXI_DATA_WIDTH/8-1); byte_index = byte_index +1)
                      if (S_AXI_WSTRB[byte_index] == 1) begin
                          cpu2ip_@PREFIX_NAME@_reg_data[byte_index*8 +: 8] <=  S_AXI_WDATA[byte_index*8 +: 8]; //dynamic register;
                      end
@@ -346,7 +346,7 @@ parameter INDEX_WIDTH           = @INDEX_WIDTH@
             //@PREFIX_NAME@ Register
             ipReadReq_@PREFIX_NAME@_reg_valid = S_AXI_ARVALID;
             ipReadReq_@PREFIX_NAME@_reg_index = axi_araddr - `REG_@PREFIX_NAME@_ADDR_START;
-            reg_data_out[`REG_@PREFIX_NAME@_BITS] = ip2cpu_@PREFIX_NAME@_reg_data;
+            reg_data_out = ip2cpu_@PREFIX_NAME@_reg_data;
         end
         else begin
             ipReadReq_@PREFIX_NAME@_reg_valid = 'd0;
