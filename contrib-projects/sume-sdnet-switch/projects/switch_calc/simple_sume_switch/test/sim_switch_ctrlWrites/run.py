@@ -133,18 +133,22 @@ for i in range(REG_DEPTH):
 def test_reg_add(index, val): 
     global pktCnt
     pkt = Ether(dst=MAC2, src=MAC1) / Calc(op1=index, opCode=ADD_REG_OP, op2=val, result=0) 
+    pkt = pad_pkt(pkt, 64)
     applyPkt(pkt, 'nf0', pktCnt)
     pktCnt += 1
     pkt = Ether(dst=MAC1, src=MAC2) / Calc(op1=index, opCode=ADD_REG_OP, op2=val, result=CONST_REG[index] + val) 
+    pkt = pad_pkt(pkt, 64)
     expPkt(pkt, 'nf0')
 
 def test_reg_set(index, val):
     global pktCnt
     # test set reg
     pkt = Ether(dst=MAC2, src=MAC1) / Calc(op1=index, opCode=SET_REG_OP, op2=val, result=0)
+    pkt = pad_pkt(pkt, 64)
     applyPkt(pkt, 'nf0', pktCnt)
     pktCnt += 1
     pkt = Ether(dst=MAC1, src=MAC2) / Calc(op1=index, opCode=SET_REG_OP, op2=val, result=0)
+    pkt = pad_pkt(pkt, 64)
     expPkt(pkt, 'nf0')
 
 # generate the test data
