@@ -141,14 +141,16 @@ module @MODULE_NAME@
 
     // control signals
     // CPU reads IP interface
-    reg       [REG_WIDTH-1:0]         ip2cpu_@PREFIX_NAME@_reg_data;
+    wire      [C_S_AXI_DATA_WIDTH-1:0]         ip2cpu_@PREFIX_NAME@_reg_data;
+    reg       [REG_WIDTH-1:0]                  ip2cpu_@PREFIX_NAME@_reg_data_adj;
     reg       [INDEX_WIDTH-1:0]                ip2cpu_@PREFIX_NAME@_reg_index;
     reg                                        ip2cpu_@PREFIX_NAME@_reg_valid;
     wire      [INDEX_WIDTH-1:0]                ipReadReq_@PREFIX_NAME@_reg_index;
     wire                                       ipReadReq_@PREFIX_NAME@_reg_valid;
 
     // CPU writes IP interface
-    wire     [REG_WIDTH-1:0]          cpu2ip_@PREFIX_NAME@_reg_data;
+    wire     [C_S_AXI_DATA_WIDTH-1:0]          cpu2ip_@PREFIX_NAME@_reg_data;
+    wire     [REG_WIDTH-1:0]                   cpu2ip_@PREFIX_NAME@_reg_data_adj;
     wire     [INDEX_WIDTH-1:0]                 cpu2ip_@PREFIX_NAME@_reg_index;
     wire                                       cpu2ip_@PREFIX_NAME@_reg_valid;
     wire                                       cpu2ip_@PREFIX_NAME@_reg_reset;
@@ -327,6 +329,21 @@ module @MODULE_NAME@
     );
     //// CPU REGS END ////
 
+    generate
+    if (C_S_AXI_DATA_WIDTH > REG_WIDTH) begin: SMALL_REG
+        assign ip2cpu_@PREFIX_NAME@_reg_data = {'d0, ip2cpu_@PREFIX_NAME@_reg_data_adj};
+        assign cpu2ip_@PREFIX_NAME@_reg_data_adj = cpu2ip_@PREFIX_NAME@_reg_data[C_S_AXI_DATA_WIDTH-1:0];
+    end
+    else if (C_S_AXI_DATA_WIDTH < REG_WIDTH) begin: LARGE_REG
+        assign ip2cpu_@PREFIX_NAME@_reg_data = ip2cpu_@PREFIX_NAME@_reg_data_adj[C_S_AXI_DATA_WIDTH-1:0];
+        assign cpu2ip_@PREFIX_NAME@_reg_data_adj = {'d0, cpu2ip_@PREFIX_NAME@_reg_data};
+    end
+    else begin: NORMAL_REG
+        assign ip2cpu_@PREFIX_NAME@_reg_data = ip2cpu_@PREFIX_NAME@_reg_data_adj;
+        assign cpu2ip_@PREFIX_NAME@_reg_data_adj = cpu2ip_@PREFIX_NAME@_reg_data;
+    end
+    endgenerate
+
     // compute predicate: if true perform raw_1 else perform raw_2
     wire predicate = ((relOp_end == `EQ_RELOP)  && (compVal_end == @PREFIX_NAME@_r[index_comp_end])) ? 1'b1 :
                      ((relOp_end == `NEQ_RELOP) && (compVal_end != @PREFIX_NAME@_r[index_comp_end])) ? 1'b1 :
@@ -352,7 +369,7 @@ module @MODULE_NAME@
             predicate_result_r <= predicate;
 
             if (cpu2ip_@PREFIX_NAME@_reg_valid && cpu2ip_@PREFIX_NAME@_reg_index < REG_DEPTH) begin
-                @PREFIX_NAME@_r[cpu2ip_@PREFIX_NAME@_reg_index] <= cpu2ip_@PREFIX_NAME@_reg_data; 
+                @PREFIX_NAME@_r[cpu2ip_@PREFIX_NAME@_reg_index] <= cpu2ip_@PREFIX_NAME@_reg_data_adj;
             end
             else if (valid_end && statefulValid_end) begin
                 if (predicate) begin
@@ -387,12 +404,12 @@ module @MODULE_NAME@
     // control path output
     always @(*) begin
         if (ipReadReq_@PREFIX_NAME@_reg_valid && ipReadReq_@PREFIX_NAME@_reg_index < REG_DEPTH) begin
-            ip2cpu_@PREFIX_NAME@_reg_data = @PREFIX_NAME@_r[ipReadReq_@PREFIX_NAME@_reg_index]; 
+            ip2cpu_@PREFIX_NAME@_reg_data_adj = @PREFIX_NAME@_r[ipReadReq_@PREFIX_NAME@_reg_index];
             ip2cpu_@PREFIX_NAME@_reg_index = ipReadReq_@PREFIX_NAME@_reg_index; 
             ip2cpu_@PREFIX_NAME@_reg_valid = 'b1; 
         end
         else begin
-            ip2cpu_@PREFIX_NAME@_reg_data = @PREFIX_NAME@_r[0]; 
+            ip2cpu_@PREFIX_NAME@_reg_data_adj = @PREFIX_NAME@_r[0]; 
             ip2cpu_@PREFIX_NAME@_reg_index = 'd0; 
             ip2cpu_@PREFIX_NAME@_reg_valid = 'b0;     
         end

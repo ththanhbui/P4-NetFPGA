@@ -38,9 +38,8 @@
 //
 
 
-`define  REG_@PREFIX_NAME@_BITS                                 @REG_WIDTH@-1:0
 `define  REG_@PREFIX_NAME@_INDEX_BITS                           @INDEX_WIDTH@-1:0
 `define  REG_@PREFIX_NAME@_WIDTH                                @REG_WIDTH@
-`define  REG_@PREFIX_NAME@_DEFAULT                              @REG_WIDTH@'h0
+`define  REG_@PREFIX_NAME@_DEFAULT                              'd0
 `define  REG_@PREFIX_NAME@_ADDR_START                           @ADDR_WIDTH@'h0
-// `define  REG_@PREFIX_NAME@_ADDR_BIN                             2'b??
+
