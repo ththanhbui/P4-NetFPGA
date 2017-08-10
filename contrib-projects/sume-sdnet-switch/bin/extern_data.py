@@ -29,7 +29,8 @@
 
 
 extern_data = {
-"reg_rw" : {"template_file": "externs/EXTERN_reg_rw_template.v", 
+"reg_rw" : {"hdl_template_file": "externs/reg_rw/hdl/EXTERN_reg_rw_template.v",
+            "cpp_template_file": "externs/reg_rw/cpp/EXTERN_reg_rw_template.hpp",
             "replacements": {"@EXTERN_NAME@" : "extern_name",
                              "@MODULE_NAME@" : "module_name",
                              "@PREFIX_NAME@" : "prefix_name",

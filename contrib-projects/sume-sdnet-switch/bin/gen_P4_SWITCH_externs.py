@@ -59,7 +59,7 @@ def find_p4_externs(switch_info_file):
 def get_extern_control_width(P4_SWITCH_dir):
     global p4_externs
     for extern_name, extern_dict in p4_externs.items():
-        extern_dir = find_extern_dir(extern_name, P4_SWITCH_dir)
+        extern_dir = find_extern_hdl_dir(extern_name, P4_SWITCH_dir)
 
         template_file = None
         for (dirpath, dirnames, filenames) in os.walk(extern_dir):
@@ -109,17 +109,28 @@ def get_extern_address(P4_SWITCH_dir, P4_SWITCH, P4_SWITCH_base_addr):
             extern_dict['base_addr'] = P4_SWITCH_base_addr + addr_offset
 
 """
-Find the UserEngine directory corresponding to extern_name
+Find the UserEngine HDL directory corresponding to extern_name
 """
-def find_extern_dir(extern_name, P4_SWITCH_dir):
+def find_extern_hdl_dir(extern_name, P4_SWITCH_dir):
     # look for extern directories
     for (dirpath, dirnames, filenames) in os.walk(P4_SWITCH_dir):
         for dirname in dirnames:
             matchObj = re.match(r"^{}.*\.HDL".format(extern_name), dirname)
             if matchObj:
                 return os.path.join(P4_SWITCH_dir, dirname)
-    print >> sys.stderr, "WARNING: could not find directory corresponding to extern: {}".format(extern_name)
+    print >> sys.stderr, "WARNING: could not find HDL directory corresponding to extern: {}".format(extern_name)
 
+"""
+Find the UserEngine TB directory corresponding to extern_name
+"""
+def find_extern_cpp_dir(extern_name, P4_SWITCH_dir):
+    # look for extern directories
+    for (dirpath, dirnames, filenames) in os.walk(P4_SWITCH_dir):
+        for dirname in dirnames:
+            matchObj = re.match(r"^{}.*\.TB".format(extern_name), dirname)
+            if matchObj:
+                return os.path.join(P4_SWITCH_dir, dirname)
+    print >> sys.stderr, "WARNING: could not find TB directory corresponding to extern: {}".format(extern_name)
 
 def get_field_width(field_name, tuple_list):
     for dic in tuple_list:
@@ -183,19 +194,19 @@ def write_cpu_regs_module(templates_dir, extern_dir, extern_dict):
         f.write(newDefines)
 
 """
-Creates the extern modules from the templates
+Creates the extern hdl modules from the templates
 """
-def make_extern_modules(templates_dir, P4_SWITCH_dir):
+def make_hdl_extern_modules(templates_dir, P4_SWITCH_dir):
     global p4_externs
     for extern_name, extern_dict in p4_externs.items():
         extern_type = extern_dict['extern_type']
-        template_file = extern_data[extern_type]['template_file']
+        template_file = extern_data[extern_type]['hdl_template_file']
         try:
             extern_template = open(os.path.join(templates_dir, template_file)).read()
         except IOError as e:
             print >> sys.stderr, "ERROR: Could not open template file for extern: {}".format(extern_name)
             sys.exit(1)
-        extern_dir = find_extern_dir(extern_name, P4_SWITCH_dir)
+        extern_dir = find_extern_hdl_dir(extern_name, P4_SWITCH_dir)
         module_name = os.path.basename(os.path.normpath(extern_dir)).replace(".HDL", "") 
         extern_dict['module_name'] = module_name
         file_name = module_name + ".v"
@@ -208,6 +219,30 @@ def make_extern_modules(templates_dir, P4_SWITCH_dir):
         # write cpu_regs module if the extern has a control interface
         if ('control_width' in extern_dict.keys() and extern_dict['control_width'] > 0):
             write_cpu_regs_module(templates_dir, extern_dir, extern_dict)
+
+"""
+Creates the extern hdl modules from the templates
+"""
+def make_cpp_extern_modules(templates_dir, P4_SWITCH_dir):
+    global p4_externs
+    for extern_name, extern_dict in p4_externs.items():
+        extern_type = extern_dict['extern_type']
+        if ('cpp_template_file' in extern_data[extern_type].keys()): 
+            template_file = extern_data[extern_type]['cpp_template_file']
+            try:
+                extern_template = open(os.path.join(templates_dir, template_file)).read()
+            except IOError as e:
+                print >> sys.stderr, "ERROR: Could not open template file for extern: {}".format(extern_name)
+                sys.exit(1)
+            extern_dir = find_extern_cpp_dir(extern_name, P4_SWITCH_dir)
+            module_name = os.path.basename(os.path.normpath(extern_dir)).replace(".TB", "") 
+            extern_dict['module_name'] = module_name
+            file_name = module_name + ".hpp"
+            for pattern, cmd in extern_data[extern_type]['replacements'].items():
+                extern_template = run_replace_cmd(extern_template, pattern, cmd, extern_dict)
+            # write extern file
+            with open(os.path.join(extern_dir, file_name), 'w') as f:
+                f.write(extern_template)
 
 
 """
@@ -246,7 +281,8 @@ def main():
     find_p4_externs(args.switch_info_file)
     get_extern_control_width(args.P4_SWITCH_dir)
     get_extern_address(args.P4_SWITCH_dir, P4_SWITCH, int(args.base_address,0))
-    make_extern_modules(args.templates_dir, args.P4_SWITCH_dir)
+    make_hdl_extern_modules(args.templates_dir, args.P4_SWITCH_dir)
+    make_cpp_extern_modules(args.templates_dir, args.P4_SWITCH_dir)
 
     dump_extern_defines(args.P4_SWITCH_dir, args.testdata_dir, args.sw_dir, int(args.base_address,0), P4_SWITCH) 
 
