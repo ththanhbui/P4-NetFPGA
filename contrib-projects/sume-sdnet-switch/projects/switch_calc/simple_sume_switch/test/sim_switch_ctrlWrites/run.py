@@ -72,7 +72,7 @@ config_writes.config_tables()
 
 # send packets after the configuration writes have finished
 #baseTime = 1044e-9 + (232e-9)*config_writes.NUM_WRITES #120e-6
-baseTime = 10e-6
+baseTime = 20e-6
 delta = 1e-6 #1e-8
 
 ###########
