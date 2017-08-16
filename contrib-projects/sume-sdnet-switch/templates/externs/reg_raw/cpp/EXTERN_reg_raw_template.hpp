@@ -7,6 +7,12 @@
 #undef WRITE_OP
 #undef ADD_OP
 
+#undef OP_WIDTH
+#undef INDEX_WIDTH
+#undef REG_WIDTH
+#undef INPUT_WIDTH
+#undef REG_DEPTH
+
 #define READ_OP    0
 #define WRITE_OP   1
 #define ADD_OP     2
