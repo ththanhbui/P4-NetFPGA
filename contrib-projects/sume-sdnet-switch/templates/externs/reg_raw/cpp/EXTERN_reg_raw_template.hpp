@@ -5,20 +5,16 @@
 
 #undef READ_OP
 #undef WRITE_OP
-
-#undef OP_WIDTH
-#undef REG_WIDTH
-#undef INDEX_WIDTH
-#undef INPUT_WIDTH
-#undef REG_DEPTH
+#undef ADD_OP
 
 #define READ_OP    0
 #define WRITE_OP   1
+#define ADD_OP     2
 
 #define OP_WIDTH 8
-#define REG_WIDTH @REG_WIDTH@
 #define INDEX_WIDTH @INDEX_WIDTH@
-#define INPUT_WIDTH (OP_WIDTH + REG_WIDTH + INDEX_WIDTH + 1)
+#define REG_WIDTH @REG_WIDTH@
+#define INPUT_WIDTH (2*REG_WIDTH+INDEX_WIDTH+OP_WIDTH+1)
 #define REG_DEPTH (1 << INDEX_WIDTH)
 
 #define REG_@PREFIX_NAME@_DEFAULT 0 
@@ -35,24 +31,27 @@ public:
 		_LV<1> stateful_valid;
 		_LV<INDEX_WIDTH> index;
 		_LV<REG_WIDTH> newVal;
+		_LV<REG_WIDTH> incVal;
 		_LV<OP_WIDTH> opCode;
 		@EXTERN_NAME@_input_t& operator=(_LV<INPUT_WIDTH> _x) {
 			stateful_valid = _x.slice(INPUT_WIDTH-1,INPUT_WIDTH-1);
-			index = _x.slice(OP_WIDTH+REG_WIDTH+INDEX_WIDTH-1,OP_WIDTH+REG_WIDTH);
-			newVal = _x.slice(OP_WIDTH+REG_WIDTH-1,OP_WIDTH);
+			index = _x.slice(2*REG_WIDTH+OP_WIDTH+INDEX_WIDTH-1,2*REG_WIDTH+OP_WIDTH);
+			newVal = _x.slice(2*REG_WIDTH+OP_WIDTH-1,REG_WIDTH+OP_WIDTH);
+			incVal = _x.slice(REG_WIDTH+OP_WIDTH-1,OP_WIDTH);
 			opCode = _x.slice(OP_WIDTH-1,0);
 			return *this;
 		}
-		_LV<INPUT_WIDTH> get_LV() { return (stateful_valid,index,newVal,opCode); }
+		_LV<INPUT_WIDTH> get_LV() { return (stateful_valid,index,newVal,incVal,opCode); }
 		operator _LV<INPUT_WIDTH>() { return get_LV(); } 
 		std::string to_string() const {
-			return std::string("(\n")  + "\t\tstateful_valid = " + stateful_valid.to_string() + "\n" + "\t\tindex = " + index.to_string() + "\n" + "\t\tnewVal = " + newVal.to_string() + "\n" + "\t\topCode = " + opCode.to_string() + "\n" + "\t)";
+			return std::string("(\n")  + "\t\tstateful_valid = " + stateful_valid.to_string() + "\n" + "\t\tindex = " + index.to_string() + "\n" + "\t\tnewVal = " + newVal.to_string() + "\n" + "\t\tincVal = " + incVal.to_string() + "\n" + "\t\topCode = " + opCode.to_string() + "\n" + "\t)";
 		}
 		@EXTERN_NAME@_input_t() {} 
-		@EXTERN_NAME@_input_t( _LV<1> _stateful_valid, _LV<INDEX_WIDTH> _index, _LV<REG_WIDTH> _newVal, _LV<OP_WIDTH> _opCode) {
+		@EXTERN_NAME@_input_t( _LV<1> _stateful_valid, _LV<INDEX_WIDTH> _index, _LV<REG_WIDTH> _newVal, _LV<REG_WIDTH> _incVal, _LV<OP_WIDTH> _opCode) {
 			stateful_valid = _stateful_valid;
 			index = _index;
 			newVal = _newVal;
+			incVal = _incVal;
 			opCode = _opCode;
 		}
 	};
@@ -121,6 +120,8 @@ public:
                 if ((@EXTERN_NAME@_input.stateful_valid.to_ullong() == 1) & (@EXTERN_NAME@_input.index.to_ullong() < REG_DEPTH)) {
                         if (@EXTERN_NAME@_input.opCode.to_ullong() == WRITE_OP) {
                                 @PREFIX_NAME@_reg[@EXTERN_NAME@_input.index.to_ullong()] = @EXTERN_NAME@_input.newVal;
+                        } else if (@EXTERN_NAME@_input.opCode.to_ullong() == ADD_OP) {
+                                @PREFIX_NAME@_reg[@EXTERN_NAME@_input.index.to_ullong()] = @PREFIX_NAME@_reg[@EXTERN_NAME@_input.index.to_ullong()] + @EXTERN_NAME@_input.incVal;
                         }
                 }
 

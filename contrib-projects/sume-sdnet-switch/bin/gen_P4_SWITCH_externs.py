@@ -193,6 +193,17 @@ def write_cpu_regs_module(templates_dir, extern_dir, extern_dict):
     with open(os.path.join(extern_dir, cpu_regs_defines_file), 'w') as f:
         f.write(newDefines)
 
+def copy_support_files(src_dir, dst_dir, no_cp_filename):
+    rc = os.system('cp -r {0} {1}'.format(os.path.normpath(src_dir)+'/*', os.path.normpath(dst_dir)+'/'))
+    if rc != 0:
+        print >> sys.stderr, "ERROR: could not copy support files for {}".format(no_cp_filename)
+        sys.exit(1)
+
+    rm_file = os.path.join(dst_dir, no_cp_filename)
+    rc = os.system('rm {}'.format(rm_file))
+    if rc != 0:
+        print >> sys.stderr, "WARNING: could not remove {}".format(rm_file)
+
 """
 Creates the extern hdl modules from the templates
 """
@@ -204,7 +215,7 @@ def make_hdl_extern_modules(templates_dir, P4_SWITCH_dir):
         try:
             extern_template = open(os.path.join(templates_dir, template_file)).read()
         except IOError as e:
-            print >> sys.stderr, "ERROR: Could not open template file for extern: {}".format(extern_name)
+            print >> sys.stderr, "ERROR: Could not open hdl template file for extern: {}".format(extern_name)
             sys.exit(1)
         extern_dir = find_extern_hdl_dir(extern_name, P4_SWITCH_dir)
         module_name = os.path.basename(os.path.normpath(extern_dir)).replace(".HDL", "") 
@@ -220,8 +231,11 @@ def make_hdl_extern_modules(templates_dir, P4_SWITCH_dir):
         if ('control_width' in extern_dict.keys() and extern_dict['control_width'] > 0):
             write_cpu_regs_module(templates_dir, extern_dir, extern_dict)
 
+        src_dir = os.path.expandvars(os.path.join('$SUME_SDNET/templates',os.path.dirname(template_file)))
+        copy_support_files(src_dir, extern_dir, os.path.basename(template_file))
+
 """
-Creates the extern hdl modules from the templates
+Creates the extern cpp files for use in the SDNet C++ simulation 
 """
 def make_cpp_extern_modules(templates_dir, P4_SWITCH_dir):
     global p4_externs
@@ -232,7 +246,7 @@ def make_cpp_extern_modules(templates_dir, P4_SWITCH_dir):
             try:
                 extern_template = open(os.path.join(templates_dir, template_file)).read()
             except IOError as e:
-                print >> sys.stderr, "ERROR: Could not open template file for extern: {}".format(extern_name)
+                print >> sys.stderr, "ERROR: Could not open cpp template file for extern: {}".format(extern_name)
                 sys.exit(1)
             extern_dir = find_extern_cpp_dir(extern_name, P4_SWITCH_dir)
             module_name = os.path.basename(os.path.normpath(extern_dir)).replace(".TB", "") 
@@ -244,6 +258,8 @@ def make_cpp_extern_modules(templates_dir, P4_SWITCH_dir):
             with open(os.path.join(extern_dir, file_name), 'w') as f:
                 f.write(extern_template)
 
+            src_dir = os.path.expandvars(os.path.join('$SUME_SDNET/templates',os.path.dirname(template_file)))
+            copy_support_files(src_dir, extern_dir, os.path.basename(template_file))
 
 """
 Write all extern info into EXTERN_DEFINES json file

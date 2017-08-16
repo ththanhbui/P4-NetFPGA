@@ -249,10 +249,9 @@ assign m_axis_tuser          = m_axis_tuser_internal[C_M_AXIS_TUSER_WIDTH-1:0];
 
 // 10GE block static config
 assign pcs_pma_config_vector = 'b0;
-//assign mac_tx_config_vector  = 'd2; // xilinx product guide 157, page 34
+// enable deficit idle count on the MAC
 assign mac_tx_config_vector  = 'h402; // xilinx product guide 157, page 34
 assign mac_rx_config_vector  = 'd2;
-//assign mac_rx_config_vector  = 'b0010_0010; // enable Receive Flow Control, Enable Receiver
 
 //Registers section
  nf_10g_interface_cpu_regs 
