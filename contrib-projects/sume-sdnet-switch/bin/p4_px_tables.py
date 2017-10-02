@@ -52,17 +52,17 @@ class PXTable(object):
         self.actions = table_dict['action_ids']
 
         # request_tuple:
-        self.request_tuple = table_dict['request_tuple']
+        self.request_tuple = table_dict['request_fields']
     
         # response_tuple:
-        self.response_tuple = table_dict['response_tuple']
+        self.response_tuple = table_dict['response_fields']
 
     """
     Combine P4 field values into single hex number where the bit width of each
     P4 field value is indicated in fields list
     """
     def _hexify(self, field_vals, fields):
-        field_sizes = [size for name, size, lsb in fields if ('padding' not in name and 'hit' not in name)]
+        field_sizes = [size for name, size in fields if ('padding' not in name and 'hit' not in name)]
 
         if (len(field_vals) != len(field_sizes)):
             print >> sys.stderr, "ERROR: not enough fields provided to complete _hexify()"
@@ -82,20 +82,19 @@ class PXTable(object):
     def extract_fields(self, field_list):
         result = []
         for field in field_list:
-            if field['px_type'] == 'bits':
-                result.append((field['px_name'], field['msb']-field['lsb']+1, field['lsb']))
-            elif field['px_type'] == 'struct':
-                for f in field['field_list']:
-                    result.append((f['px_name'], f['msb']-f['lsb']+1, f['lsb']))
-        return sorted(result, key=lambda x: x[2], reverse=True)
+            if field['type'] == 'bits':
+                result.append((field['px_name'], field['size']))
+            elif field['type'] == 'struct':
+                for f in field['fields']:
+                    result.append((f['px_name'], f['size']))
+        return result 
 
     """
     Get the action_ID of the given action_name for the table
     """
     def get_action_id(self, action_name):
-        for action in self.actions:
-            if action['p4_name'] == action_name:
-                return action['action_run']
+        if action_name in self.actions.keys():
+            return self.actions[action_name]
         return None
 
     """
@@ -104,7 +103,7 @@ class PXTable(object):
     """
     def hexify_value(self, action_name, action_data):
         fields = self.extract_fields(self.response_tuple)
-        if (action_name not in [a['p4_name'] for a in self.actions]):
+        if (action_name not in self.actions.keys()):
             print >> sys.stderr, "ERROR: {0} is not a recognized action for this table".format(action_name)
             sys.exit(1)
         field_vals = [self.get_action_id(action_name)] + action_data
@@ -155,8 +154,8 @@ class PXTCAMTable(PXTable):
     Table type for ternary matches
     """
 
-    def __init__(self, name):
-        super(PXTCAMTable, self).__init__(name)
+    def __init__(self, table_dict):
+        super(PXTCAMTable, self).__init__(table_dict)
 
         # Each entry is a list with the following format:
         # format       ==> [address, mask, key, value] 
@@ -193,8 +192,8 @@ class PXLPMTable(PXTable):
     Table type for longest prefix matches
     """
 
-    def __init__(self, name):
-        super(PXLPMTable, self).__init__(name)
+    def __init__(self, table_dict):
+        super(PXLPMTable, self).__init__(table_dict)
 
         # Each entry is a list with the following format:
         # format       ==> [prefix, length, value] 
@@ -224,18 +223,20 @@ Create the PX_TABLES
 def make_px_tables(switch_info_file):
     with open(switch_info_file) as f:
         switch_info = json.load(f)
-    for table_dict in switch_info['lookup_engines']:
-        table_name = table_dict['p4_name']
-        table_type = table_dict['match_type']
-        if (table_type == "EM"):
-            PX_TABLES[table_name] = PXCAMTable(table_dict)
-        elif (table_type == "TCAM"):
-            PX_TABLES[table_name] = PXTCAMTable(table_dict)
-        elif (table_type == "LPM"):
-            PX_TABLES[table_name] = PXLPMTable(table_dict)
-        else:
-            print >> sys.stderr, "ERROR: {0} uses an unsupported match type".format(table_name)
-            sys.exit(1) 
+    for block, block_dict in switch_info.items():
+        if 'px_lookups' in block_dict.keys():
+            for table_dict in block_dict['px_lookups']:
+                table_name = table_dict['p4_name']
+                table_type = table_dict['match_type']
+                if (table_type == "EM"):
+                    PX_TABLES[table_name] = PXCAMTable(table_dict)
+                elif (table_type == "TCAM"):
+                    PX_TABLES[table_name] = PXTCAMTable(table_dict)
+                elif (table_type == "LPM"):
+                    PX_TABLES[table_name] = PXLPMTable(table_dict)
+                else:
+                    print >> sys.stderr, "ERROR: {0} uses an unsupported match type".format(table_name)
+                    sys.exit(1) 
 
 
 def help_table_cam_add_entry():

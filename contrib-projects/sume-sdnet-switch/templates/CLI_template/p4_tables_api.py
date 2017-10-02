@@ -102,44 +102,6 @@ TABLE_DEFINES_FILE = os.path.expandvars("$P4_PROJECT_DIR/sw/CLI/SimpleSumeSwitch
 ### Helper Functions ###
 ########################
 
-# """
-# Read the SimpleSumeSwitch_table_defines.txt file 
-# """
-# def read_table_defines():
-#     tables_dict = OrderedDict()
-#     with open(TABLE_DEFINES_FILE) as f:
-#         for line in f:
-#             # set the table key_width
-#             obj = re.search(r"SimpleSumeSwitch_(.*)_KEY_WIDTH  ([\d]*)", line)
-#             if obj is not None:
-#                 table_name = obj.group(1)
-#                 key_width = obj.group(2)
-#                 add_dic_attribute(tables_dict, table_name, 'key_width', int(key_width))
-#             # set the table value_width
-#             obj = re.search(r"SimpleSumeSwitch_(.*)_VALUE_WIDTH  ([\d]*)", line)
-#             if obj is not None:
-#                 table_name = obj.group(1)
-#                 value_width = obj.group(2)
-#                 add_dic_attribute(tables_dict, table_name, 'value_width', int(value_width))
-#             # set the table max_depth
-#             obj = re.search(r"SimpleSumeSwitch_(.*)_MAX_DEPTH  (\d*)", line)
-#             if obj is not None:
-#                 table_name = obj.group(1)
-#                 max_depth = obj.group(2)
-#                 add_dic_attribute(tables_dict, table_name, 'max_depth', int(max_depth))
-#             # set the tableID
-#             obj = re.search(r"SimpleSumeSwitch_(.*)_TABLEID  (\d*)", line)
-#             if obj is not None:
-#                 table_name = obj.group(1)
-#                 tableID = obj.group(2)
-#                 add_dic_attribute(tables_dict, table_name, 'tableID', int(tableID))
-#     return tables_dict
-# 
-# def add_dic_attribute(dic, key, attribute, val):
-#     if key not in dic.keys():
-#         dic[key] = {}
-#     dic[key][attribute] = val
-
 """
 def the SimpleSumeSwitch_table_defines.json file
 """

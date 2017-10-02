@@ -63,7 +63,7 @@ def get_address(reg_name, index):
         return ERROR_CODE
     addressable_depth = 2**P4_EXTERNS[reg_name]['control_width']
     if index >=  addressable_depth or index < 0:
-        print >> sys.stderr, "ERROR: cannot access {0}[{1}]".format(reg_name, index)
+        print >> sys.stderr, "ERROR: cannot access {0}[{1}], index out of bounds".format(reg_name, index)
         return ERROR_CODE
     return P4_EXTERNS[reg_name]['base_addr'] + index
 

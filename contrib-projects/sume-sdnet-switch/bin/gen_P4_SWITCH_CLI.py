@@ -186,7 +186,11 @@ def find_tables(switch_info_file, P4_SWITCH_dir, P4_SWITCH):
     tables = {"EM":{},  "TCAM":{}, "LPM":{}}
     with open(switch_info_file) as f:
         switch_info = json.load(f)
-    name_type = [(t['px_name'], t['match_type']) for t in switch_info['lookup_engines']]
+    lookup_engines = []
+    for block, block_dict in switch_info.items():
+        if 'px_lookups' in block_dict.keys():
+            lookup_engines += block_dict['px_lookups']
+    name_type = [(t['px_name'], t['match_type']) for t in lookup_engines]
     for table_name, table_type in name_type:
         tables[table_type][table_name] = get_table_info(P4_SWITCH_dir, table_name, P4_SWITCH, TABLE_INFO_DICT[table_type])
     return tables

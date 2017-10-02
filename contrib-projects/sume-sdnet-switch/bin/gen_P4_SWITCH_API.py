@@ -203,7 +203,11 @@ CLI_dir = "CLI"
 def find_table_types(switch_info_file):
     with open(switch_info_file) as f:
         switch_info = json.load(f)
-    table_types = list(set([t['match_type'] for t in switch_info['lookup_engines']]))
+    lookup_engines = []
+    for block, block_dict in switch_info.items():
+        if 'px_lookups' in block_dict.keys():
+            lookup_engines += block_dict['px_lookups']
+    table_types = list(set([t['match_type'] for t in lookup_engines]))
     return table_types
 
 def copy_API_files(table_types, P4_SWITCH_dir, api_dir):

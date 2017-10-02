@@ -47,42 +47,30 @@ Read the switch_info_file to get the user engine information
 def find_p4_externs(switch_info_file):
     with open(switch_info_file) as f:
         switch_info = json.load(f)
-    user_engines = switch_info['user_engines']
+    user_engines = []
+    for block, block_dict in switch_info.items():
+        if 'px_user_engines' in block_dict.keys():
+            user_engines += block_dict['px_user_engines']
     for engine in user_engines:
         for sig in extern_data.keys():
             if sig in engine['p4_name']:
                 px_name = engine['px_name']
                 p4_externs[px_name] = engine
                 p4_externs[px_name]['extern_type'] = sig
-                p4_externs[px_name]['prefix_name'] = engine['p4_name'].replace('_'+sig, '')
+                ind = engine['p4_name'].index(sig)
+                p4_externs[px_name]['prefix_name'] = engine['p4_name'][0:ind-1]
 
-def get_extern_control_width(P4_SWITCH_dir):
+def get_extern_annotations():
     global p4_externs
     for extern_name, extern_dict in p4_externs.items():
-        extern_dir = find_extern_hdl_dir(extern_name, P4_SWITCH_dir)
-
-        template_file = None
-        for (dirpath, dirnames, filenames) in os.walk(extern_dir):
-            for filename in filenames:
-                if (re.match(r".*{}_.*\.v\.stub".format(extern_name), filename)):
-                    template_file = os.path.join(extern_dir, filename)
-
-        try:
-            content = open(template_file).read()
-        except:
-            print >> sys.stderr, "ERROR: Could not read template file for extern {}".format(extern_name)
+        if 'Xilinx_ControlWidth' not in extern_dict['annotations'].keys():
+            print >> sys.stderr, "ERROR: @Xilinx_ControlWidth annotations unspecified for extern: {}".format(extern_name) 
             sys.exit(1)
-
-        # extract address width
-        searchObj = re.search(r"input(.*)control_S_AXI_AWADDR", content)
-        if(searchObj is not None and ':' in searchObj.group(1)):
-            addr_bits = searchObj.group(1).replace('[','').replace(']','')
-            addr_bits = map(int, addr_bits.split(':'))
-            extern_dict['control_width'] = addr_bits[0] - addr_bits[1] + 1
-        elif searchObj is not None:
-            extern_dict['control_width'] = 1
-        else:
-            extern_dict['control_width'] = 0
+        extern_dict['control_width'] = int(extern_dict['annotations']['Xilinx_ControlWidth'][0])
+        if 'Xilinx_MaxLatency' not in extern_dict['annotations'].keys():
+            print >> sys.stderr, "ERROR: @Xilinx_ControlWidth annotations unspecified for extern: {}".format(extern_name) 
+            sys.exit(1)       
+        extern_dict['max_cycles'] = int(extern_dict['annotations']['Xilinx_MaxLatency'][0])
  
 """
 Read P4_SWITCH.h to determine the offset address and compute the base address
@@ -135,7 +123,7 @@ def find_extern_cpp_dir(extern_name, P4_SWITCH_dir):
 def get_field_width(field_name, tuple_list):
     for dic in tuple_list:
         if dic['px_name'] == field_name:
-            return dic['msb'] - dic['lsb'] + 1
+            return dic['size']
     print >> sys.stderr, "WARNING: could not find bit width for field {}".format(field_name)
     return None
 
@@ -143,24 +131,24 @@ def run_replace_cmd(contents, pattern, cmd, extern_dict):
     searchObj = re.search(r"input_width\((.*)\)", cmd)
     if searchObj is not None:
         field_name = searchObj.group(1)
-        width = get_field_width(field_name, extern_dict['input_tuple'])
+        width = get_field_width(field_name, extern_dict['input_fields'])
         return contents.replace(pattern, str(width))
     
     searchObj = re.search(r"output_width\((.*)\)", cmd)
     if searchObj is not None:
         field_name = searchObj.group(1)
-        width = get_field_width(field_name, extern_dict['output_tuple'])
+        width = get_field_width(field_name, extern_dict['output_fields'])
         return contents.replace(pattern, str(width))
     elif (cmd == 'extern_name'):
-        return contents.replace(pattern, extern_dict['px_name'])
+        return contents.replace(pattern, extern_dict['prefix_name'] + '_' + extern_dict['extern_type'])
     elif (cmd == 'module_name'):
         return contents.replace(pattern, extern_dict['module_name'])
     elif (cmd == 'prefix_name'):
         return contents.replace(pattern, extern_dict['prefix_name'])
     elif (cmd == 'addr_width'):
-        return contents.replace(pattern, str(extern_dict['control_width'])) #TODO: replace with whatever keyword is used for this annotation
-#    elif (cmd == 'max_cycles'):
-#        return contents.replace(pattern, str(extern_dict['max_cycles'])) #TODO: replace with whatever keyword is used for this annotation
+        return contents.replace(pattern, str(extern_dict['control_width'])) 
+    elif (cmd == 'max_cycles'):
+        return contents.replace(pattern, str(extern_dict['max_cycles'])) 
     else:
         print >> sys.stderr, "WARNING: could not replace {} using command {} for extern {}".format(pattern, cmd, extern_dict['p4_name'])
         return contents
@@ -295,7 +283,7 @@ def main():
     P4_SWITCH = os.path.basename(os.path.normpath(args.P4_SWITCH_dir))
 
     find_p4_externs(args.switch_info_file)
-    get_extern_control_width(args.P4_SWITCH_dir)
+    get_extern_annotations()
     get_extern_address(args.P4_SWITCH_dir, P4_SWITCH, int(args.base_address,0))
     make_hdl_extern_modules(args.templates_dir, args.P4_SWITCH_dir)
     make_cpp_extern_modules(args.templates_dir, args.P4_SWITCH_dir)
