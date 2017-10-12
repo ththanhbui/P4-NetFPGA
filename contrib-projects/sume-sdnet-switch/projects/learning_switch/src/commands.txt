@@ -38,9 +38,9 @@ table_cam_add_entry broadcast set_broadcast 0b00000100 => 0b01010001
 table_cam_add_entry broadcast set_broadcast 0b00010000 => 0b01000101
 table_cam_add_entry broadcast set_broadcast 0b01000000 => 0b00010101
 
-table_cam_add_entry smac NoAction_3 0x081111111108 => 
-table_cam_add_entry smac NoAction_3 0x082222222208 => 
-table_cam_add_entry smac NoAction_3 0x083333333308 => 
-table_cam_add_entry smac NoAction_3 0x084444444408 => 
-table_cam_add_entry smac NoAction_3 0xffffffffffff => 
+table_cam_add_entry smac NoAction 0x081111111108 => 
+table_cam_add_entry smac NoAction 0x082222222208 => 
+table_cam_add_entry smac NoAction 0x083333333308 => 
+table_cam_add_entry smac NoAction 0x084444444408 => 
+table_cam_add_entry smac NoAction 0xffffffffffff => 
 
