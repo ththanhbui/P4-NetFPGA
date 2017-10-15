@@ -83,6 +83,7 @@ struct digest_data_t {
 }
 
 // Parser Implementation
+@Xilinx_MaxPacketRegion(16384)
 parser TopParser(packet_in b, 
                  out Parsed_packet p, 
                  out user_metadata_t user_metadata,
@@ -118,6 +119,7 @@ control TopPipe(inout Parsed_packet p,
 }
 
 // Deparser Implementation
+@Xilinx_MaxPacketRegion(16384)
 control TopDeparser(packet_out b,
                     in Parsed_packet p,
                     in user_metadata_t user_metadata,
