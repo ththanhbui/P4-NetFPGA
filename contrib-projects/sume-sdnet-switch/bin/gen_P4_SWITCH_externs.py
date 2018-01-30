@@ -237,17 +237,19 @@ def make_cpp_extern_modules(templates_dir, P4_SWITCH_dir):
                 print >> sys.stderr, "ERROR: Could not open cpp template file for extern: {}".format(extern_name)
                 sys.exit(1)
             extern_dir = find_extern_cpp_dir(extern_name, P4_SWITCH_dir)
-            module_name = os.path.basename(os.path.normpath(extern_dir)).replace(".TB", "") 
-            extern_dict['module_name'] = module_name
-            file_name = module_name + ".hpp"
-            for pattern, cmd in extern_data[extern_type]['replacements'].items():
-                extern_template = run_replace_cmd(extern_template, pattern, cmd, extern_dict)
-            # write extern file
-            with open(os.path.join(extern_dir, file_name), 'w') as f:
-                f.write(extern_template)
-
-            src_dir = os.path.expandvars(os.path.join('$SUME_SDNET/templates',os.path.dirname(template_file)))
-            copy_support_files(src_dir, extern_dir, os.path.basename(template_file))
+            if extern_dir is not None:
+                # SDNet was run without support for CPP simulation
+                module_name = os.path.basename(os.path.normpath(extern_dir)).replace(".TB", "") 
+                extern_dict['module_name'] = module_name
+                file_name = module_name + ".hpp"
+                for pattern, cmd in extern_data[extern_type]['replacements'].items():
+                    extern_template = run_replace_cmd(extern_template, pattern, cmd, extern_dict)
+                # write extern file
+                with open(os.path.join(extern_dir, file_name), 'w') as f:
+                    f.write(extern_template)
+    
+                src_dir = os.path.expandvars(os.path.join('$SUME_SDNET/templates',os.path.dirname(template_file)))
+                copy_support_files(src_dir, extern_dir, os.path.basename(template_file))
 
 """
 Write all extern info into EXTERN_DEFINES json file
