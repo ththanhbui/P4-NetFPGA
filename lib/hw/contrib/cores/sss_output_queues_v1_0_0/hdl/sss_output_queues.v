@@ -441,7 +441,9 @@ module sss_output_queues
       	case(metadata_state[i])
       		WAIT_HEADER: begin
       			if(rd_en[i]) begin
-      				metadata_state_next[i] = WAIT_EOP;
+                                if (~fifo_out_tlast[i]) begin
+      				    metadata_state_next[i] = WAIT_EOP;
+                                end
       				metadata_rd_en[i] = 1'b1;
 				pkt_removed[i]= 1'b1;
 				bytes_removed[i]=fifo_out_tuser[i][15:0];
