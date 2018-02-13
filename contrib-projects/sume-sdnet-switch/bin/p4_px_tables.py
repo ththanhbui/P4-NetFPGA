@@ -43,8 +43,9 @@ class PXTable(object):
     Generic PX table type
     """
 
-    def __init__(self, table_dict):
+    def __init__(self, block_name, table_dict):
         self.info = table_dict
+        self.block_name = block_name
         self.name = table_dict['p4_name']
 
         # actions:
@@ -103,8 +104,9 @@ class PXTable(object):
     """
     def hexify_value(self, action_name, action_data):
         fields = self.extract_fields(self.response_tuple)
+        action_name = '{}.{}'.format(self.block_name, action_name)
         if (action_name not in self.actions.keys()):
-            print >> sys.stderr, "ERROR: {0} is not a recognized action for this table".format(action_name)
+            print >> sys.stderr, "ERROR: {0} is not a recognized action for table {}".format(action_name, self.name)
             sys.exit(1)
         field_vals = [self.get_action_id(action_name)] + action_data
         return self._hexify(field_vals, fields)
@@ -124,8 +126,8 @@ class PXCAMTable(PXTable):
     Table type for exact matches
     """
 
-    def __init__(self, table_dict):
-        super(PXCAMTable, self).__init__(table_dict)
+    def __init__(self, block_name, table_dict):
+        super(PXCAMTable, self).__init__(block_name, table_dict)
 
         # format       ==> {key : value}
         #   key format   ==> <key1><key2>...
@@ -154,8 +156,8 @@ class PXTCAMTable(PXTable):
     Table type for ternary matches
     """
 
-    def __init__(self, table_dict):
-        super(PXTCAMTable, self).__init__(table_dict)
+    def __init__(self, block_name, table_dict):
+        super(PXTCAMTable, self).__init__(block_name, table_dict)
 
         # Each entry is a list with the following format:
         # format       ==> [address, mask, key, value] 
@@ -192,8 +194,8 @@ class PXLPMTable(PXTable):
     Table type for longest prefix matches
     """
 
-    def __init__(self, table_dict):
-        super(PXLPMTable, self).__init__(table_dict)
+    def __init__(self, block_name, table_dict):
+        super(PXLPMTable, self).__init__(block_name, table_dict)
 
         # Each entry is a list with the following format:
         # format       ==> [prefix, length, value] 
@@ -229,11 +231,11 @@ def make_px_tables(switch_info_file):
                 table_name = table_dict['p4_name']
                 table_type = table_dict['match_type']
                 if (table_type == "EM"):
-                    PX_TABLES[table_name] = PXCAMTable(table_dict)
+                    PX_TABLES[table_name] = PXCAMTable(block, table_dict)
                 elif (table_type == "TCAM"):
-                    PX_TABLES[table_name] = PXTCAMTable(table_dict)
+                    PX_TABLES[table_name] = PXTCAMTable(block, table_dict)
                 elif (table_type == "LPM"):
-                    PX_TABLES[table_name] = PXLPMTable(table_dict)
+                    PX_TABLES[table_name] = PXLPMTable(block, table_dict)
                 else:
                     print >> sys.stderr, "ERROR: {0} uses an unsupported match type".format(table_name)
                     sys.exit(1) 
