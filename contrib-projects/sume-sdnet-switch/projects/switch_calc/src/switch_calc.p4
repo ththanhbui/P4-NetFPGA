@@ -47,7 +47,7 @@ typedef bit<32> calcField_t;
 #define INDEX_WIDTH 4 // determines depth of const register
 
 // ctrlPort register
-@Xilinx_MaxLatency(1)
+@Xilinx_MaxLatency(64)
 @Xilinx_ControlWidth(INDEX_WIDTH)
 extern void const_reg_rw(in bit<INDEX_WIDTH> index, 
                          in calcField_t newVal, 

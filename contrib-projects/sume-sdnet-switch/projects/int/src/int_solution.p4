@@ -42,7 +42,7 @@ typedef bit<48> EthernetAddress;
 #define REG_WRITE 8w1
 
 // switchID register
-@Xilinx_MaxLatency(1)
+@Xilinx_MaxLatency(64)
 @Xilinx_ControlWidth(2)
 extern void switchID_reg_rw(in bit<2> index, in bit<31> newVal, in bit<8> opCode, out bit<31> result);
 

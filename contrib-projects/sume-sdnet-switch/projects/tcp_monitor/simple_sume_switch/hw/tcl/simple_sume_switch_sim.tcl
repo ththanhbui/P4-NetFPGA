@@ -323,4 +323,10 @@ add_wave $nf_sume_sdnet_ip/out_pkt_len
 add_wave $nf_sume_sdnet_ip/out_src_port
 add_wave $nf_sume_sdnet_ip/out_dst_port
 
+add_wave_divider {dist_reg_raw}
+add_wave {{/top_tb/top_sim/nf_datapath_0/nf_sume_sdnet_wrapper_1/inst/SimpleSumeSwitch_inst/dist_reg_raw_0}}
+
+add_wave_divider {byte_cnt_reg_raw}
+add_wave {{/top_tb/top_sim/nf_datapath_0/nf_sume_sdnet_wrapper_1/inst/SimpleSumeSwitch_inst/byte_cnt_reg_raw_0}}
+
 run 65us

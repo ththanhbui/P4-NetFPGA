@@ -74,7 +74,7 @@ typedef bit<32> IPv4Addr_t;
 extern void hash_lrc(in bit<104> in_data, out bit<HASH_WIDTH> result);
 
 // byte_cnt register
-@Xilinx_MaxLatency(3) // pipelined
+@Xilinx_MaxLatency(64)
 @Xilinx_ControlWidth(HASH_WIDTH)
 extern void byte_cnt_reg_raw(in bit<HASH_WIDTH> index,
                              in bit<32> newVal,
@@ -83,7 +83,7 @@ extern void byte_cnt_reg_raw(in bit<HASH_WIDTH> index,
                              out bit<32> result);
 
 // dist register
-@Xilinx_MaxLatency(3) // pipelined
+@Xilinx_MaxLatency(64)
 @Xilinx_ControlWidth(3)
 extern void dist_reg_raw(in bit<3> index,
                          in bit<32> newVal,

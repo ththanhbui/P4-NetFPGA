@@ -191,6 +191,12 @@ nftest_barrier()
 for i in DIST.keys():
     nftest_regread_expect(p4_externs['dist']['base_addr'] + i, DIST[i])
 
+# perform writes then read out writes
+for i in DIST.keys():
+    nftest_regwrite(p4_externs['dist']['base_addr'] + i, i)
+for i in DIST.keys():
+    nftest_regread_expect(p4_externs['dist']['base_addr'] + i, i)
+
 nftest_barrier()
 
 mres=[]
