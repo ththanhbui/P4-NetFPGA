@@ -66,7 +66,6 @@ parameter INDEX_WIDTH           = @INDEX_WIDTH@
     output reg [C_S_AXI_DATA_WIDTH-1:0]           cpu2ip_@PREFIX_NAME@_reg_data,
     output reg [`REG_@PREFIX_NAME@_INDEX_BITS]    cpu2ip_@PREFIX_NAME@_reg_index,
     output reg                                    cpu2ip_@PREFIX_NAME@_reg_valid,
-    output reg                                    cpu2ip_@PREFIX_NAME@_reg_reset,
 
     // AXI Lite ports
     input                                     S_AXI_ACLK,
@@ -254,6 +253,7 @@ parameter INDEX_WIDTH           = @INDEX_WIDTH@
           else
             begin
               axi_arready <= 1'b0;
+              axi_araddr  <= axi_araddr;
             end
         end
     end
@@ -270,17 +270,31 @@ parameter INDEX_WIDTH           = @INDEX_WIDTH@
         end
       else
         begin
-          if (axi_arready && S_AXI_ARVALID && ~axi_rvalid)
-            begin
-              // Valid read data is available at the read data bus
-              axi_rvalid <= 1'b1;
-              axi_rresp  <= 2'b0; // OKAY response
-            end
-          else if (axi_rvalid && S_AXI_RREADY)
-            begin
+          axi_rresp  <= 2'b0; // OKAY response
+          if (axi_rvalid && S_AXI_RREADY) begin
               // Read data is accepted by the master
               axi_rvalid <= 1'b0;
-            end
+          end
+          else if (ip2cpu_@PREFIX_NAME@_reg_valid) begin
+              // Read data is available
+              axi_rvalid <= 1'b1;
+          end
+          else begin
+              // hold read data until it is accepted
+              axi_rvalid <= axi_rvalid;
+          end
+
+//          if (axi_arready && S_AXI_ARVALID && ~axi_rvalid)
+//            begin
+//              // Valid read data is available at the read data bus
+//              axi_rvalid <= 1'b1;
+//              axi_rresp  <= 2'b0; // OKAY response
+//            end
+//          else if (axi_rvalid && S_AXI_RREADY)
+//            begin
+//              // Read data is accepted by the master
+//              axi_rvalid <= 1'b0;
+//            end
         end
     end
 
@@ -296,32 +310,24 @@ parameter INDEX_WIDTH           = @INDEX_WIDTH@
 //R/W register, not cleared
     always @(posedge clk) begin
         if (!resetn_sync) begin
-
-            cpu2ip_@PREFIX_NAME@_reg_data       <= #1 `REG_@PREFIX_NAME@_DEFAULT;
-            cpu2ip_@PREFIX_NAME@_reg_index      <= #1 'd0;
-            cpu2ip_@PREFIX_NAME@_reg_valid      <= #1 'd0;
-            cpu2ip_@PREFIX_NAME@_reg_reset      <= #1 'd1;
+            cpu2ip_@PREFIX_NAME@_reg_data       <= `REG_@PREFIX_NAME@_DEFAULT;
+            cpu2ip_@PREFIX_NAME@_reg_index      <= 'd0;
+            cpu2ip_@PREFIX_NAME@_reg_valid      <= 'd0;
         end
         else begin
-           if (reg_wren) begin //write event
-             if (axi_awaddr < 2**INDEX_WIDTH) begin
-                 //@PREFIX_NAME@ Register
-                 for ( byte_index = 0; byte_index <= (C_S_AXI_DATA_WIDTH/8-1); byte_index = byte_index +1)
-                     if (S_AXI_WSTRB[byte_index] == 1) begin
-                         cpu2ip_@PREFIX_NAME@_reg_data[byte_index*8 +: 8] <=  S_AXI_WDATA[byte_index*8 +: 8]; //dynamic register;
-                     end
-                 cpu2ip_@PREFIX_NAME@_reg_valid <= 'd1;
-                 cpu2ip_@PREFIX_NAME@_reg_index <= axi_awaddr - `REG_@PREFIX_NAME@_ADDR_START;
-                 cpu2ip_@PREFIX_NAME@_reg_reset <= 'd0;                
-             end
-             else begin
-                 cpu2ip_@PREFIX_NAME@_reg_valid <= 'd0;
-                 cpu2ip_@PREFIX_NAME@_reg_reset <= 'd0;
-             end
+           if (reg_wren && axi_awaddr < 2**INDEX_WIDTH) begin //write event
+               //@PREFIX_NAME@ Register
+               for ( byte_index = 0; byte_index <= (C_S_AXI_DATA_WIDTH/8-1); byte_index = byte_index +1)
+                   if (S_AXI_WSTRB[byte_index] == 1) begin
+                       cpu2ip_@PREFIX_NAME@_reg_data[byte_index*8 +: 8] <=  S_AXI_WDATA[byte_index*8 +: 8]; //dynamic register;
+                   end
+               cpu2ip_@PREFIX_NAME@_reg_valid <= 'd1;
+               cpu2ip_@PREFIX_NAME@_reg_index <= axi_awaddr - `REG_@PREFIX_NAME@_ADDR_START;
            end
            else begin
-               cpu2ip_@PREFIX_NAME@_reg_valid <= #1 'd0;
-               cpu2ip_@PREFIX_NAME@_reg_reset <= #1 'd0;
+               cpu2ip_@PREFIX_NAME@_reg_data  <= 'd0;
+               cpu2ip_@PREFIX_NAME@_reg_index <= 'd0;
+               cpu2ip_@PREFIX_NAME@_reg_valid <= 'd0;
            end
         end
   end
@@ -340,37 +346,39 @@ parameter INDEX_WIDTH           = @INDEX_WIDTH@
     // temperary no extra logic here
     assign reg_rden = axi_arready & S_AXI_ARVALID & ~axi_rvalid;
 
-    always @(*)
+    always @( posedge S_AXI_ACLK )
     begin
-        if (axi_araddr < 2**INDEX_WIDTH) begin
-            //@PREFIX_NAME@ Register
-            ipReadReq_@PREFIX_NAME@_reg_valid = S_AXI_ARVALID;
-            ipReadReq_@PREFIX_NAME@_reg_index = axi_araddr - `REG_@PREFIX_NAME@_ADDR_START;
-            reg_data_out = ip2cpu_@PREFIX_NAME@_reg_data;
+        if ( S_AXI_ARESETN == 1'b0 ) begin
+            ipReadReq_@PREFIX_NAME@_reg_valid <= 'd0;
+            ipReadReq_@PREFIX_NAME@_reg_index <= 'd0;
         end
         else begin
-            ipReadReq_@PREFIX_NAME@_reg_valid = 'd0;
-            ipReadReq_@PREFIX_NAME@_reg_index = 'd0;
-            reg_data_out = 'd0;
+            if (S_AXI_ARVALID && axi_arready && axi_araddr < 2**INDEX_WIDTH) begin
+                //@PREFIX_NAME@ Register
+                ipReadReq_@PREFIX_NAME@_reg_valid <= 1;
+                ipReadReq_@PREFIX_NAME@_reg_index <= axi_araddr - `REG_@PREFIX_NAME@_ADDR_START;
+            end
+            else begin
+                ipReadReq_@PREFIX_NAME@_reg_valid <= 'd0;
+                ipReadReq_@PREFIX_NAME@_reg_index <= 'd0;
+            end
         end
     end //end of assigning data to IP2Bus_Data bus
 
 // Output register or memory read data
     always @( posedge S_AXI_ACLK )
     begin
-      if ( S_AXI_ARESETN == 1'b0 )
-        begin
+      if ( S_AXI_ARESETN == 1'b0 ) begin
           axi_rdata  <= 0;
-        end
-      else
-        begin
-          // When there is a valid read address (S_AXI_ARVALID) with
-          // acceptance of read address by the slave (axi_arready),
-          // output the read dada
-          if (reg_rden)
-            begin
-              axi_rdata <= reg_data_out/*ip2bus_data*/;     // register read data
-            end
+      end
+      else begin
+          // register the output data from the IP
+          if (ip2cpu_@PREFIX_NAME@_reg_valid) begin
+              axi_rdata <= ip2cpu_@PREFIX_NAME@_reg_data;     // register read data
+          end
+          else begin
+              axi_rdata <= axi_rdata;
+          end
         end
     end
 endmodule

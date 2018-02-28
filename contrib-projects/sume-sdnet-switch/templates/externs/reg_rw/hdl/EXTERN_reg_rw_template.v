@@ -27,6 +27,7 @@
 // @NETFPGA_LICENSE_HEADER_END@
 //
 
+
 /*
  * File: @MODULE_NAME@.v 
  * Author: Stephen Ibanez
@@ -35,10 +36,8 @@
  *
  * reg_rw
  *
- * This version attempts to set the requested read data on the same 
- * clock cycle as when it is requested. 
+ * Atomically read or write a register.
  *
- * Designed to take NUM_CYCLES clock cycles to complete
  */
 
 
@@ -48,23 +47,23 @@
 `define WRITE_OP   8'd1
 
 `include "@PREFIX_NAME@_cpu_regs_defines.v"
-module @MODULE_NAME@
+module @MODULE_NAME@ 
 #(
-    parameter NUM_CYCLES = 1,
     parameter INDEX_WIDTH = @INDEX_WIDTH@,
     parameter REG_WIDTH = @REG_WIDTH@,
     parameter OP_WIDTH = 8,
+    parameter INPUT_WIDTH = REG_WIDTH+INDEX_WIDTH+8+1,
     parameter C_S_AXI_ADDR_WIDTH = @ADDR_WIDTH@,
     parameter C_S_AXI_DATA_WIDTH = 32
 )
 (
     // Data Path I/O
-    input                                   clk_lookup,
-    input                                   clk_lookup_rst_high, 
-    input                                     tuple_in_@EXTERN_NAME@_input_VALID,
-    input   [REG_WIDTH+INDEX_WIDTH+8:0]       tuple_in_@EXTERN_NAME@_input_DATA,
-    output                                    tuple_out_@EXTERN_NAME@_output_VALID,
-    output  [REG_WIDTH-1:0]                   tuple_out_@EXTERN_NAME@_output_DATA,
+    input                                           clk_lookup,
+    input                                           clk_lookup_rst_high, 
+    input                                           tuple_in_@EXTERN_NAME@_input_VALID,
+    input   [INPUT_WIDTH-1:0]                       tuple_in_@EXTERN_NAME@_input_DATA,
+    output                                         tuple_out_@EXTERN_NAME@_output_VALID,
+    output  [REG_WIDTH-1:0]                        tuple_out_@EXTERN_NAME@_output_DATA,
 
     // Control Path I/O
     input                                     clk_control,
@@ -89,30 +88,63 @@ module @MODULE_NAME@
 
 );
 
+
 /* Tuple format for input:
         [REG_WIDTH+INDEX_WIDTH+8   : REG_WIDTH+INDEX_WIDTH+8] : statefulValid
         [REG_WIDTH+INDEX_WIDTH+7   : REG_WIDTH+8            ] : index_in
         [REG_WIDTH+7               : 8                        ] : newVal_in
         [7                         : 0                        ] : opCode_in
-
 */
 
-    // convert the input data to readable wires
-    wire                                 statefulValid_in = tuple_in_@EXTERN_NAME@_input_DATA[REG_WIDTH+INDEX_WIDTH+8];
-    wire                                       valid_in   = tuple_in_@EXTERN_NAME@_input_VALID;
-    wire    [INDEX_WIDTH-1:0]                  index_in   = tuple_in_@EXTERN_NAME@_input_DATA[REG_WIDTH+INDEX_WIDTH+7 : REG_WIDTH+8];
-    wire    [REG_WIDTH-1:0]                    newVal_in  = tuple_in_@EXTERN_NAME@_input_DATA[REG_WIDTH+7 : 8];
-    wire    [OP_WIDTH-1:0]                     opCode_in  = tuple_in_@EXTERN_NAME@_input_DATA[7:0];
+    // request_fifo output signals 
+    wire                           statefulValid_fifo; 
+    wire    [INDEX_WIDTH-1:0]      index_fifo;
+    wire    [REG_WIDTH-1:0]        newVal_fifo;
+    wire    [OP_WIDTH-1:0]         opCode_fifo;
+    
+    wire empty_fifo;
+    wire full_fifo;
+    reg rd_en_fifo;
 
-    // final registers
-    reg  valid_final_r;
-    reg [INDEX_WIDTH-1:0]  index_final_r;
-
+    localparam L2_REQ_BUF_DEPTH = 6;
     localparam REG_DEPTH = 2**INDEX_WIDTH;
 
-    // registers to hold statefulness
-    integer             i;
-    reg     [REG_WIDTH-1:0]      @PREFIX_NAME@_r[REG_DEPTH-1:0];
+    // data plane state machine states
+    localparam START_REQ = 0;
+    localparam WAIT_BRAM = 1;
+    localparam WRITE_RESULT = 2;
+
+    // control plane state machine states
+    localparam WAIT_REQ = 0;
+    localparam WAIT_BRAM_CTRL = 1;
+    localparam WRITE_READ_RESULT = 2;
+
+    // data plane state machine signals
+    reg [2:0]                     d_state, d_state_next;
+    reg [REG_WIDTH-1:0]           result_r, result_r_next;
+    reg [1:0]                     cycle_cnt, cycle_cnt_next;
+    reg                           valid_out;
+    reg [REG_WIDTH-1:0]           result_out;
+
+    // control plane state machine signals
+    reg [2:0]                     c_state, c_state_next;
+    reg [REG_WIDTH-1:0]           ip2cpu_data_r, ip2cpu_data_r_next;
+    reg [INDEX_WIDTH-1:0]         ip2cpu_index_r, ip2cpu_index_r_next;
+    reg [1:0]                     cycle_cnt_ctrl, cycle_cnt_ctrl_next;
+
+    // BRAM signals
+    /*  TODO: add support for control-plane */
+    reg                       c_we_bram;
+    reg                       c_en_bram;
+    reg   [INDEX_WIDTH-1:0]   c_addr_in_bram, c_addr_in_bram_r, c_addr_in_bram_r_next;
+    reg   [REG_WIDTH-1:0]     c_data_in_bram;
+    wire  [REG_WIDTH-1:0]     c_data_out_bram;
+
+    reg                      d_we_bram;
+    reg                      d_en_bram;
+    reg  [INDEX_WIDTH-1:0]   d_addr_in_bram, d_addr_in_bram_r, d_addr_in_bram_r_next;
+    reg  [REG_WIDTH-1:0]     d_data_in_bram;
+    wire [REG_WIDTH-1:0]     d_data_out_bram;
 
     // control signals
     // CPU reads IP interface
@@ -120,83 +152,28 @@ module @MODULE_NAME@
     reg       [REG_WIDTH-1:0]                  ip2cpu_@PREFIX_NAME@_reg_data_adj;
     reg       [INDEX_WIDTH-1:0]                ip2cpu_@PREFIX_NAME@_reg_index;
     reg                                        ip2cpu_@PREFIX_NAME@_reg_valid;
-    wire      [INDEX_WIDTH-1:0]             ipReadReq_@PREFIX_NAME@_reg_index;
-    wire                                    ipReadReq_@PREFIX_NAME@_reg_valid;
+    wire      [INDEX_WIDTH-1:0]                ipReadReq_@PREFIX_NAME@_reg_index;
+    wire                                       ipReadReq_@PREFIX_NAME@_reg_valid;
 
     // CPU writes IP interface
     wire     [C_S_AXI_DATA_WIDTH-1:0]          cpu2ip_@PREFIX_NAME@_reg_data;
     wire     [REG_WIDTH-1:0]                   cpu2ip_@PREFIX_NAME@_reg_data_adj;
     wire     [INDEX_WIDTH-1:0]                 cpu2ip_@PREFIX_NAME@_reg_index;
     wire                                       cpu2ip_@PREFIX_NAME@_reg_valid;
-    wire                                       cpu2ip_@PREFIX_NAME@_reg_reset;
+
+    reg      [INDEX_WIDTH-1:0]                 ipReadReq_index_r0;
+    reg                                        ipReadReq_valid_r0;
+    reg      [REG_WIDTH-1:0]                   cpu2ip_data_r0;
+    reg      [INDEX_WIDTH-1:0]                 cpu2ip_index_r0;
+    reg                                        cpu2ip_valid_r0;
+
+    reg      [INDEX_WIDTH-1:0]                 ipReadReq_index_r1;
+    reg                                        ipReadReq_valid_r1;
+    reg      [REG_WIDTH-1:0]                   cpu2ip_data_r1;
+    reg      [INDEX_WIDTH-1:0]                 cpu2ip_index_r1;
+    reg                                        cpu2ip_valid_r1;
 
     wire resetn_sync;
-
-    // end of pipeline signals
-    wire                              statefulValid_end;
-    wire                                    valid_end;
-    wire    [INDEX_WIDTH-1:0]               index_end;
-    wire    [REG_WIDTH-1:0]                   newVal_end;
-    wire    [OP_WIDTH-1:0]                  opCode_end;
-
-    // create pipeline registers if required
-    generate 
-    if (NUM_CYCLES > 1) begin: PIPELINE 
-        reg [NUM_CYCLES-2:0]          statefulValid_pipe_r;
-        reg [NUM_CYCLES-2:0]          valid_pipe_r;
-        reg [INDEX_WIDTH-1:0]         index_pipe_r[NUM_CYCLES-2:0];
-        reg [REG_WIDTH-1:0]           newVal_pipe_r[NUM_CYCLES-2:0];
-        reg [OP_WIDTH-1:0]            opCode_pipe_r[NUM_CYCLES-2:0];
-
-        integer j;
-        integer k;
-    
-        // Make pipeline stages to help with timing
-        always @ (posedge clk_lookup) begin
-            if(~resetn_sync | cpu2ip_@PREFIX_NAME@_reg_reset) begin
-                for (j=0; j < NUM_CYCLES-1; j=j+1) begin
-                    statefulValid_pipe_r[j] <= 'd0;
-                    valid_pipe_r[j] <= 'd0;
-                    index_pipe_r[j] <= 'd0;
-                    newVal_pipe_r[j] <= 'd0;
-                    opCode_pipe_r[j] <= 'd0;
-                end
-            end
-            else begin
-                for (k=0; k < NUM_CYCLES-1; k=k+1) begin
-                    if (k == 0) begin
-                        statefulValid_pipe_r[k] <= statefulValid_in;
-                        valid_pipe_r[k] <= valid_in;
-                        index_pipe_r[k] <= index_in;
-                        newVal_pipe_r[k] <= newVal_in;
-                        opCode_pipe_r[k] <= opCode_in;
-                    end
-                    else begin
-                        statefulValid_pipe_r[k] <= statefulValid_pipe_r[k-1];
-                        valid_pipe_r[k] <= valid_pipe_r[k-1];
-                        index_pipe_r[k] <= index_pipe_r[k-1];
-                        newVal_pipe_r[k] <= newVal_pipe_r[k-1];
-                        opCode_pipe_r[k] <= opCode_pipe_r[k-1];
-                    end
-                end
-            end
-        end
-
-        assign statefulValid_end = statefulValid_pipe_r[NUM_CYCLES-2];
-        assign valid_end = valid_pipe_r[NUM_CYCLES-2];
-        assign index_end = index_pipe_r[NUM_CYCLES-2];
-        assign newVal_end = newVal_pipe_r[NUM_CYCLES-2];
-        assign opCode_end = opCode_pipe_r[NUM_CYCLES-2];
-
-    end
-    else begin: NO_PIPELINE
-        assign statefulValid_end = statefulValid_in;
-        assign valid_end = valid_in;
-        assign index_end = index_in;
-        assign newVal_end = newVal_in;
-        assign opCode_end = opCode_in;
-    end
-    endgenerate
 
 
     //// CPU REGS START ////
@@ -233,22 +210,69 @@ module @MODULE_NAME@
     
       // Register ports
       // CPU reads IP interface
-      .ip2cpu_@PREFIX_NAME@_reg_data              (ip2cpu_@PREFIX_NAME@_reg_data),
-      .ip2cpu_@PREFIX_NAME@_reg_index             (ip2cpu_@PREFIX_NAME@_reg_index),
-      .ip2cpu_@PREFIX_NAME@_reg_valid             (ip2cpu_@PREFIX_NAME@_reg_valid),
+      .ip2cpu_@PREFIX_NAME@_reg_data          (ip2cpu_@PREFIX_NAME@_reg_data),
+      .ip2cpu_@PREFIX_NAME@_reg_index         (ip2cpu_@PREFIX_NAME@_reg_index),
+      .ip2cpu_@PREFIX_NAME@_reg_valid         (ip2cpu_@PREFIX_NAME@_reg_valid),
       .ipReadReq_@PREFIX_NAME@_reg_index       (ipReadReq_@PREFIX_NAME@_reg_index),
-      .ipReadReq_@PREFIX_NAME@_reg_valid       (ipReadReq_@PREFIX_NAME@_reg_valid),
+      .ipReadReq_@PREFIX_NAME@_reg_valid      (ipReadReq_@PREFIX_NAME@_reg_valid),
       // CPU writes IP interface
       .cpu2ip_@PREFIX_NAME@_reg_data          (cpu2ip_@PREFIX_NAME@_reg_data),
       .cpu2ip_@PREFIX_NAME@_reg_index         (cpu2ip_@PREFIX_NAME@_reg_index),
       .cpu2ip_@PREFIX_NAME@_reg_valid         (cpu2ip_@PREFIX_NAME@_reg_valid),
-      .cpu2ip_@PREFIX_NAME@_reg_reset         (cpu2ip_@PREFIX_NAME@_reg_reset),
       // Global Registers - user can select if to use
       .cpu_resetn_soft(),//software reset, after cpu module
       .resetn_soft    (),//software reset to cpu module (from central reset management)
       .resetn_sync    (resetn_sync)//synchronized reset, use for better timing
     );
     //// CPU REGS END ////
+
+    //// Input buffer to hold requests ////
+    fallthrough_small_fifo
+    #(
+        .WIDTH(INPUT_WIDTH),
+        .MAX_DEPTH_BITS(L2_REQ_BUF_DEPTH)
+    )
+    request_fifo
+    (
+       // Outputs
+       .dout                           ({statefulValid_fifo, index_fifo, newVal_fifo, opCode_fifo}),
+       .full                           (full_fifo),
+       .nearly_full                    (),
+       .prog_full                      (),
+       .empty                          (empty_fifo),
+       // Inputs
+       .din                            (tuple_in_@EXTERN_NAME@_input_DATA),
+       .wr_en                          (tuple_in_@EXTERN_NAME@_input_VALID),
+       .rd_en                          (rd_en_fifo),
+       .reset                          (~resetn_sync),
+       .clk                            (clk_lookup)
+    );
+
+    //// BRAM to hold state ////
+    true_dp_bram
+    #(
+        .L2_DEPTH(INDEX_WIDTH),
+        .WIDTH(REG_WIDTH)
+    ) @PREFIX_NAME@_bram
+    (
+        .clk               (clk_lookup),
+        // control plane R/W interface
+        .we1               (c_we_bram),
+        .en1               (c_en_bram),
+        .addr1             (c_addr_in_bram),
+        .din1              (c_data_in_bram),
+        .rst1              (~resetn_sync),
+        .regce1            (c_en_bram),
+        .dout1             (c_data_out_bram),
+        // data plane R/W interface
+        .we2               (d_we_bram),
+        .en2               (d_en_bram),
+        .addr2             (d_addr_in_bram),
+        .din2              (d_data_in_bram),
+        .rst2              (~resetn_sync),
+        .regce2            (d_en_bram),
+        .dout2             (d_data_out_bram)
+    );
 
     generate
     if (C_S_AXI_DATA_WIDTH > REG_WIDTH) begin: SMALL_REG
@@ -265,51 +289,212 @@ module @MODULE_NAME@
     end
     endgenerate
 
-    
-    // drive the registers
-    always @(posedge clk_lookup)
-    begin
-        if (~resetn_sync | cpu2ip_@PREFIX_NAME@_reg_reset) begin
-            valid_final_r <= 'd0;
-            index_final_r <= 'd0;
+   // register the cpu_regs module outputs
+   always @ (posedge clk_lookup) begin
+       if (~resetn_sync) begin
+           cpu2ip_data_r0 <= 0;
+           cpu2ip_index_r0 <= 0;
+           cpu2ip_valid_r0 <= 0;
 
-            for (i = 0; i < REG_DEPTH; i = i+1) begin
-                @PREFIX_NAME@_r[i]     <= `REG_@PREFIX_NAME@_DEFAULT;
-            end
-        end
-        else begin
-            valid_final_r <= valid_end;
-            index_final_r <= index_end;
+           ipReadReq_index_r0 <= 0;
+           ipReadReq_valid_r0 <= 0;
 
-            if (cpu2ip_@PREFIX_NAME@_reg_valid && cpu2ip_@PREFIX_NAME@_reg_index < REG_DEPTH) begin
-                @PREFIX_NAME@_r[cpu2ip_@PREFIX_NAME@_reg_index] <= cpu2ip_@PREFIX_NAME@_reg_data_adj;
-            end
-            else if (valid_end && statefulValid_end && index_end < REG_DEPTH) begin
-                if (opCode_end == `WRITE_OP)
-                    @PREFIX_NAME@_r[index_end] <= newVal_end;
-            end
-        end
-    end
+           cpu2ip_data_r1 <= 0;
+           cpu2ip_index_r1 <= 0;
+           cpu2ip_valid_r1 <= 0;
 
-    // Read the new value from the register
-    wire [REG_WIDTH-1:0] result_out = (index_final_r < REG_DEPTH)? @PREFIX_NAME@_r[index_final_r] : `REG_@PREFIX_NAME@_DEFAULT;
+           ipReadReq_index_r1 <= 0;
+           ipReadReq_valid_r1 <= 0;
+       end
+       else begin
+           cpu2ip_data_r0 <= cpu2ip_@PREFIX_NAME@_reg_data_adj;
+           cpu2ip_index_r0 <= cpu2ip_@PREFIX_NAME@_reg_index;
+           cpu2ip_valid_r0 <= cpu2ip_@PREFIX_NAME@_reg_valid;
 
-    assign tuple_out_@EXTERN_NAME@_output_VALID = valid_final_r;
-    assign tuple_out_@EXTERN_NAME@_output_DATA  = {result_out};
+           ipReadReq_index_r0 <= ipReadReq_@PREFIX_NAME@_reg_index;
+           ipReadReq_valid_r0 <= ipReadReq_@PREFIX_NAME@_reg_valid;
 
-    // control path output
-    always @(*) begin
-        if (ipReadReq_@PREFIX_NAME@_reg_valid && ipReadReq_@PREFIX_NAME@_reg_index < REG_DEPTH) begin
-            ip2cpu_@PREFIX_NAME@_reg_data_adj = @PREFIX_NAME@_r[ipReadReq_@PREFIX_NAME@_reg_index];
-            ip2cpu_@PREFIX_NAME@_reg_index = ipReadReq_@PREFIX_NAME@_reg_index;
-            ip2cpu_@PREFIX_NAME@_reg_valid = 'b1;
-        end
-        else begin
-            ip2cpu_@PREFIX_NAME@_reg_data_adj = @PREFIX_NAME@_r[0];
-            ip2cpu_@PREFIX_NAME@_reg_index = 'd0;
-            ip2cpu_@PREFIX_NAME@_reg_valid = 'b0;
-        end
-    end
+           cpu2ip_data_r1 <=  cpu2ip_data_r0;
+           cpu2ip_index_r1 <= cpu2ip_index_r0;
+           cpu2ip_valid_r1 <= cpu2ip_valid_r0;
+
+           ipReadReq_index_r1 <= ipReadReq_index_r0;
+           ipReadReq_valid_r1 <= ipReadReq_valid_r0;
+       end
+   end
+
+
+   /* data plane R/W State Machine */ 
+   always @(*) begin
+      // default values
+      d_state_next   = d_state;
+      rd_en_fifo = 0;
+      d_en_bram = 1;
+
+      d_we_bram = 0;
+      d_addr_in_bram = d_addr_in_bram_r;
+      d_addr_in_bram_r_next = d_addr_in_bram_r;
+      d_data_in_bram = 0;
+      
+      result_r_next = result_r;
+      
+      cycle_cnt_next = cycle_cnt;
+      valid_out = 0;
+      result_out = 0;
+
+      case(d_state)
+          START_REQ: begin
+              if (~empty_fifo) begin
+                  rd_en_fifo = 1;
+                  if (statefulValid_fifo && index_fifo < REG_DEPTH) begin
+                      if (opCode_fifo == `READ_OP) begin
+                          d_addr_in_bram = index_fifo;
+                          d_addr_in_bram_r_next = index_fifo;
+                          d_state_next = WAIT_BRAM;
+                      end
+                      else if (opCode_fifo == `WRITE_OP) begin
+                          d_we_bram = 1;
+                          d_addr_in_bram = index_fifo;
+                          d_addr_in_bram_r_next = index_fifo;
+                          d_data_in_bram = newVal_fifo;
+                          result_r_next = newVal_fifo;
+                          d_state_next = WRITE_RESULT;
+                      end
+                      else begin
+                          $display("ERROR: d_state = START_REQ, unsupported opCode: %0d\n", opCode_fifo);
+                          result_r_next = 0;
+                          d_state_next = WRITE_RESULT;
+                      end
+                  end
+                  else begin
+                      result_r_next = 0;
+                      d_state_next = WRITE_RESULT;
+                  end
+              end
+          end
+
+          WAIT_BRAM: begin
+              if (cycle_cnt == 1'b1) begin // 2 cycle BRAM read latency
+                  cycle_cnt_next = 0;
+                  result_r_next = d_data_out_bram;
+                  d_state_next = WRITE_RESULT;
+              end
+              else begin
+                  cycle_cnt_next = cycle_cnt + 1;
+              end
+          end
+
+          WRITE_RESULT: begin
+             valid_out = 1;
+             result_out = result_r;
+             d_state_next = START_REQ;
+          end
+      endcase // case(d_state)
+   end // always @ (*)
+
+   assign tuple_out_@EXTERN_NAME@_output_VALID = valid_out;
+   assign tuple_out_@EXTERN_NAME@_output_DATA  = result_out;
+
+   always @(posedge clk_lookup) begin
+      if(~resetn_sync) begin
+         d_state <= START_REQ;
+         d_addr_in_bram_r <= 0;
+         result_r <= 0;
+         cycle_cnt <= 0;
+      end
+      else begin
+         d_state <= d_state_next;
+         d_addr_in_bram_r <= d_addr_in_bram_r_next;
+         result_r <= result_r_next;
+         cycle_cnt <= cycle_cnt_next;
+      end
+   end
+
+
+   /* control plane R/W state machine */
+   always @(*) begin
+      // default values
+      c_state_next   = c_state;
+      c_en_bram = 1;
+
+      c_we_bram = 0;
+      c_addr_in_bram = c_addr_in_bram_r;
+      c_addr_in_bram_r_next = c_addr_in_bram_r;
+      c_data_in_bram = 0;
+
+      ip2cpu_data_r_next = ip2cpu_data_r;
+      ip2cpu_index_r_next = ip2cpu_index_r;
+
+      cycle_cnt_ctrl_next = cycle_cnt_ctrl;
+
+      ip2cpu_@PREFIX_NAME@_reg_valid = 0;
+      ip2cpu_@PREFIX_NAME@_reg_data_adj = 0;
+      ip2cpu_@PREFIX_NAME@_reg_index = 0;
+
+      case(c_state)
+          WAIT_REQ: begin
+              if (cpu2ip_valid_r1 && cpu2ip_index_r1 < REG_DEPTH) begin
+                  c_we_bram = 1;
+                  c_addr_in_bram = cpu2ip_index_r1;
+                  c_addr_in_bram_r_next = cpu2ip_index_r1;
+                  c_data_in_bram = cpu2ip_data_r1;
+              end
+              else if (ipReadReq_valid_r1) begin
+                  if (ipReadReq_index_r1 < REG_DEPTH) begin
+                      c_addr_in_bram = ipReadReq_index_r1;
+                      c_addr_in_bram_r_next = ipReadReq_index_r1;
+                      c_state_next = WAIT_BRAM_CTRL;
+                  end
+                  else begin
+                      $display("ERROR: c_state = WAIT_REQ, requested read index out of range: %0d\n", ipReadReq_index_r1);
+                      ip2cpu_data_r_next = 0;
+                      ip2cpu_index_r_next = 0;
+                      c_state_next = WRITE_READ_RESULT;
+                  end
+              end
+          end
+
+          WAIT_BRAM_CTRL: begin
+              if (cycle_cnt_ctrl == 1'b1) begin // 2 cycle BRAM read latency
+                  cycle_cnt_ctrl_next = 0;
+                  ip2cpu_data_r_next = c_data_out_bram;
+                  ip2cpu_index_r_next = c_addr_in_bram_r;
+                  c_state_next = WRITE_READ_RESULT;
+              end
+              else begin
+                  cycle_cnt_ctrl_next = cycle_cnt_ctrl + 1;
+              end
+          end
+
+          WRITE_READ_RESULT: begin
+              ip2cpu_@PREFIX_NAME@_reg_valid = 1;
+              ip2cpu_@PREFIX_NAME@_reg_data_adj = ip2cpu_data_r;
+              ip2cpu_@PREFIX_NAME@_reg_index = ip2cpu_index_r;
+              c_state_next = WAIT_REQ;
+          end
+      endcase // case(c_state)
+   end // always @ (*)
+
+   // state machine is running on clk_lookup because the clocks
+   // are the same ... (clk_200)
+   always @(posedge clk_lookup) begin
+      if(~resetn_sync) begin
+         c_state <= WAIT_REQ;
+         c_addr_in_bram_r <= 0;
+
+         ip2cpu_data_r <= 0;
+         ip2cpu_index_r <= 0;
+         cycle_cnt_ctrl <= 0;
+      end
+      else begin
+         c_state <= c_state_next;
+         c_addr_in_bram_r <= c_addr_in_bram_r_next;
+
+         ip2cpu_data_r <= ip2cpu_data_r_next;
+         ip2cpu_index_r <= ip2cpu_index_r_next;
+         cycle_cnt_ctrl <= cycle_cnt_ctrl_next;
+      end
+   end
 
 endmodule
 
