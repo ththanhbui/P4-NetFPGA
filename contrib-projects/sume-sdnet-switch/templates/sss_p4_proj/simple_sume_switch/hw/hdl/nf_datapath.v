@@ -213,8 +213,8 @@ module nf_datapath #(
     (* mark_debug = "true" *) wire [Q_SIZE_WIDTH-1:0]    dma_q_size; 
  
   //Input Arbiter
-  input_arbiter_ip 
- input_arbiter_v1_0 (
+  input_arbiter_drr_ip 
+ input_arbiter_drr_v1_0 (
       .axis_aclk(axis_aclk), 
       .axis_resetn(axis_resetn), 
       .m_axis_tdata (s_axis_opl_tdata), 
