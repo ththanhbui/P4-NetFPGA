@@ -88,9 +88,9 @@ struct user_metadata_t {
     bit<8>  unused;
 }
 
-// digest data
+// digest data, MUST be 256 bits
 struct digest_data_t {
-    bit<80>  unused;
+    bit<256>  unused;
 }
 
 // Parser Implementation

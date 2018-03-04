@@ -50,7 +50,7 @@ module nf_sume_sdnet #(
 //Master AXI Stream Data Width
 parameter                                                      C_M_AXIS_DATA_WIDTH = 256,
 parameter                                                      C_S_AXIS_DATA_WIDTH = 256,
-parameter                                                      C_M_AXIS_TUSER_WIDTH = 128,
+parameter                                                      C_M_AXIS_TUSER_WIDTH = 304,
 parameter                                                      C_S_AXIS_TUSER_WIDTH = 128,
 
 // AXI Registers Data Width
@@ -60,7 +60,7 @@ parameter                                                      C_S_AXI_ADDR_WIDT
 // SDNet Address Width
 parameter                                                      SDNET_ADDR_WIDTH = 12,
 
-parameter                                                      DIGEST_WIDTH = 80
+parameter                                                      DIGEST_WIDTH = 256
 
 )
 (
@@ -137,10 +137,9 @@ output                                                          S_AXI_AWREADY
 //########################
 //## SDNet -> SUME signals
 //########################
-(* mark_debug = "true" *) wire  [C_M_AXIS_TUSER_WIDTH-1:0]         sume_tuple_out_DATA; 
+(* mark_debug = "true" *) wire  [C_S_AXIS_TUSER_WIDTH-1:0]         sume_tuple_out_DATA; 
 (* mark_debug = "true" *) wire                                     digest_tuple_out_VALID; 
 (* mark_debug = "true" *) wire  [DIGEST_WIDTH-1:0]                 digest_tuple_out_DATA; 
-wire  [DIGEST_WIDTH-1:0]                 digest_tuple_out_DATA_swap; 
 
 //#####################
 //## debugging signals
@@ -238,14 +237,6 @@ SimpleSumeSwitch SimpleSumeSwitch_inst (
   
 ); // p4_processor_inst
 
-// change endian of digest data so that it can easily be interpreted as
-// a scapy packet
-changeEndian #(.WIDTH(DIGEST_WIDTH)) digest_swap (
-  .in_bus(digest_tuple_out_DATA),
-  .out_bus(digest_tuple_out_DATA_swap)
-);
-
-
 // replace q_size data in sume_tuple_out_DATA with digest_data
 /* Format of m_axis_tuser signal:
  *     [15:0]    pkt_len; // unsigned int
@@ -255,7 +246,7 @@ changeEndian #(.WIDTH(DIGEST_WIDTH)) digest_swap (
  *     [47:40]   send_dig_to_cpu; // only bit 40 is used
  *     [127:48]  digest_data;
  */
-assign m_axis_tuser = {digest_tuple_out_DATA_swap, sume_tuple_out_DATA[C_M_AXIS_TUSER_WIDTH-DIGEST_WIDTH-1:0]};
+assign m_axis_tuser = {digest_tuple_out_DATA, sume_tuple_out_DATA[C_M_AXIS_TUSER_WIDTH-DIGEST_WIDTH-1:0]};
 
 // debugging signals
 wire [15:0] in_pkt_len    = s_axis_tuser[15:0];

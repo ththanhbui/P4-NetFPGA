@@ -337,28 +337,4 @@ add_wave $nf_sume_sdnet_ip/out_dst_port -radix bin
 add_wave $nf_sume_sdnet_ip/out_drop
 add_wave $nf_sume_sdnet_ip/out_send_dig
 
-set sss_output_queues_ip /top_tb/top_sim/nf_datapath_0/bram_output_queues_1/inst/ 
-add_wave_divider {sss_output_queues signals}
-add_wave $sss_output_queues_ip/send_dig_to_cpu
-add_wave $sss_output_queues_ip/digest_data
-#add_wave $sss_output_queues_ip/swapped_digest_data
-add_wave $sss_output_queues_ip/data_queue_in
-add_wave $sss_output_queues_ip/data_queue_wr_en
-add_wave $sss_output_queues_ip/rd_en
-add_wave $sss_output_queues_ip/metadata_queue_in
-add_wave $sss_output_queues_ip/metadata_queue_wr_en
-add_wave $sss_output_queues_ip/metadata_rd_en
-
-add_wave $sss_output_queues_ip/nf0_q_size
-add_wave $sss_output_queues_ip/nf1_q_size
-add_wave $sss_output_queues_ip/nf2_q_size
-add_wave $sss_output_queues_ip/nf3_q_size
-add_wave $sss_output_queues_ip/dma_q_size
-add_wave $sss_output_queues_ip/state
-add_wave $sss_output_queues_ip/state_next
-add_wave $sss_output_queues_ip/oq
-add_wave $sss_output_queues_ip/drop_count
-
-
-
 run 65us

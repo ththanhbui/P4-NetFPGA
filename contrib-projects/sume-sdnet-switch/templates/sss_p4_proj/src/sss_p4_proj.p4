@@ -77,9 +77,9 @@ struct user_metadata_t {
     bit<8>  unused;
 }
 
-// digest data to be sent to CPU if desired. MUST be 80 bits!
+// digest data to be sent to CPU if desired. MUST be 256 bits!
 struct digest_data_t {
-    bit<80>  unused;
+    bit<256>  unused;
 }
 
 // Parser Implementation

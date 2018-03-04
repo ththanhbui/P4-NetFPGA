@@ -106,7 +106,7 @@ class PXTable(object):
         fields = self.extract_fields(self.response_tuple)
         action_name = '{}.{}'.format(self.block_name, action_name)
         if (action_name not in self.actions.keys()):
-            print >> sys.stderr, "ERROR: {0} is not a recognized action for table {}".format(action_name, self.name)
+            print >> sys.stderr, "ERROR: {} is not a recognized action for table {}".format(action_name, self.name)
             sys.exit(1)
         field_vals = [self.get_action_id(action_name)] + action_data
         return self._hexify(field_vals, fields)
@@ -237,7 +237,7 @@ def make_px_tables(switch_info_file):
                 elif (table_type == "LPM"):
                     PX_TABLES[table_name] = PXLPMTable(block, table_dict)
                 else:
-                    print >> sys.stderr, "ERROR: {0} uses an unsupported match type".format(table_name)
+                    print >> sys.stderr, "ERROR: {} uses an unsupported match type".format(table_name)
                     sys.exit(1) 
 
 
@@ -350,7 +350,7 @@ Add entry to CAM table
 def run_table_cam_add_entry(line):
     (table_name, keys, action_name, action_data) = parse_table_cam_add_entry(line)
     if (table_name not in PX_TABLES.keys()):
-        print >> sys.stderr, "ERROR: {0} is not a recognized table name".format(table_name)
+        print >> sys.stderr, "ERROR: {} is not a recognized table name".format(table_name)
         sys.exit(1)
     PX_TABLES[table_name].add_entry(keys, action_name, action_data)
 
@@ -361,7 +361,7 @@ Add entry to TCAM table
 def run_table_tcam_add_entry(line):
     (table_name, address, keys, masks, action_name, action_data) = parse_table_tcam_add_entry(line)
     if (table_name not in PX_TABLES.keys()):
-        print >> sys.stderr, "ERROR: {0} is not a recognized table name".format(table_name)
+        print >> sys.stderr, "ERROR: {} is not a recognized table name".format(table_name)
         sys.exit(1)   
     PX_TABLES[table_name].add_entry(address, keys, masks, action_name, action_data)
 
@@ -372,7 +372,7 @@ Add entry to LPM table
 def run_table_lpm_add_entry(line):
     (table_name, prefix, length, action_name, action_data) = parse_table_lpm_add_entry(line)
     if (table_name not in PX_TABLES.keys()):
-        print >> sys.stderr, "ERROR: {0} is not a recognized table name".format(table_name)
+        print >> sys.stderr, "ERROR: {} is not a recognized table name".format(table_name)
         sys.exit(1)       
     PX_TABLES[table_name].add_entry(prefix, length, action_name, action_data)
 

@@ -38,9 +38,6 @@
  * whole packet
  */
 typedef bit<48> EthernetAddress; 
-typedef bit<32> IPv4Address;
-
-#define IPV4_TYPE 0x0800
 
 // standard Ethernet header
 header Ethernet_h { 
@@ -49,34 +46,17 @@ header Ethernet_h {
     bit<16> etherType;
 }
 
-// IPv4 header without options
-header IPv4_h {
-    bit<4> version;
-    bit<4> ihl;
-    bit<8> diffserv; 
-    bit<16> totalLen; 
-    bit<16> identification; 
-    bit<3> flags;
-    bit<13> fragOffset; 
-    bit<8> ttl;
-    bit<8> protocol; 
-    bit<16> hdrChecksum; 
-    IPv4Address srcAddr; 
-    IPv4Address dstAddr;
-}
-
 
 // List of all recognized headers
 struct Parsed_packet { 
     Ethernet_h ethernet; 
-    IPv4_h ip;
 }
 
 // digest data to send to cpu if desired
 struct digest_data_t {
+    bit<184> unused;
+    bit<64> eth_src_addr;  // 64 bits so we can use the LELongField type for scapy
     port_t src_port;
-    EthernetAddress eth_src_addr;
-    bit<24> unused;
 }
 
 // user defined metadata: can be used to share information between
@@ -98,15 +78,7 @@ parser TopParser(packet_in b,
         digest_data.src_port = 0;
         digest_data.eth_src_addr = 0;
         digest_data.unused = 0;
-        transition select(p.ethernet.etherType) {
-            IPV4_TYPE: parse_ipv4;
-            default: reject;
-        } 
-    }
-
-    state parse_ipv4 { 
-        b.extract(p.ip);
-        transition accept; 
+        transition accept;
     }
 }
 
@@ -158,7 +130,7 @@ control TopPipe(inout Parsed_packet headers,
 
     action send_to_control() {
         digest_data.src_port = sume_metadata.src_port;
-        digest_data.eth_src_addr = headers.ethernet.srcAddr;
+        digest_data.eth_src_addr = 16w0 ++ headers.ethernet.srcAddr;
         sume_metadata.send_dig_to_cpu = 1;
     }
 
@@ -186,7 +158,6 @@ control TopDeparser(packet_out b,
                     inout sume_metadata_t sume_metadata) { 
     apply {
         b.emit(p.ethernet); 
-        b.emit(p.ip);
     }
 }
 

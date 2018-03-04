@@ -43,7 +43,7 @@ entries to the forwarding and smac tables
 """
 
 DMA_IFACE = 'nf0'
-DIG_PKT_LEN = 10 # 10 bytes, 80 bits
+DIG_PKT_LEN = 32 # 32 bytes, 256 bits
 
 forward_tbl = {}
 smac_tbl = {}
@@ -67,8 +67,8 @@ def add_to_tables(dig_pkt):
     if (found == 'False'):
         print 'Adding entry: ({0}, set_output_port, {1}) to the forward table'.format(hex(eth_src_addr), bin(src_port))
         table_cam_add_entry('forward', [eth_src_addr], 'set_output_port', [src_port])
-        print 'Adding entry: ({0}, NoAction_3, []) to the smac table'.format(hex(eth_src_addr))
-        table_cam_add_entry('smac', [eth_src_addr], 'NoAction_3', [])
+        print 'Adding entry: ({0}, NoAction, []) to the smac table'.format(hex(eth_src_addr))
+        table_cam_add_entry('smac', [eth_src_addr], 'NoAction', [])
     else:
         print "Entry: ({0}, set_output_port, {1}) is already in the tables".format(hex(eth_src_addr), bin(src_port))
 
