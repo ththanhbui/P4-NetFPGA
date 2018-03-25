@@ -62,7 +62,7 @@ extern_data = {
                               "@REG_WIDTH@" : "input_width(newVal)"}
 },
 
-"reg_ifElseRaw": {"hdl_template_file": "externs/EXTERN_reg_ifElseRaw_template.v",
+"reg_ifElseRaw": {"hdl_template_file": "externs/reg_ifElseRaw/hdl/EXTERN_reg_ifElseRaw_template.v",
                   "replacements": {"@EXTERN_NAME@" : "extern_name",
                                    "@MODULE_NAME@" : "module_name",
                                    "@PREFIX_NAME@" : "prefix_name",
@@ -72,7 +72,7 @@ extern_data = {
                                    "@REG_WIDTH@" : "output_width(result)"}
 },
 
-"reg_sub": {"hdl_template_file": "externs/EXTERN_reg_sub_template.v",
+"reg_sub": {"hdl_template_file": "externs/reg_sub/hdl/EXTERN_reg_sub_template.v",
             "replacements": {"@EXTERN_NAME@" : "extern_name",
                              "@MODULE_NAME@" : "module_name",
                              "@PREFIX_NAME@" : "prefix_name",

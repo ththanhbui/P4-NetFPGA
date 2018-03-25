@@ -36,6 +36,7 @@ which contain the initial entries in each table
 """
 
 import sys, os, argparse, re, json
+import struct, socket
 from collections import OrderedDict
 
 class PXTable(object):
@@ -275,6 +276,24 @@ PARAMS:
     <action_data> : space separated list of values to provide as input to the action
 """
 
+def ip2int(addr):
+    return struct.unpack("!I", socket.inet_aton(addr))[0]
+
+def mac2int(addr):
+    return int(addr.translate(None, ":"), 16)
+
+def convert_to_int(string):
+    mac_fmat = r'([\dA-Fa-f]{2}:){5}[\dA-Fa-f]{2}'
+    ip_fmat = r'([0-9]{1,3}\.){3}[0-9]{1,3}'
+    if re.match(mac_fmat, string):
+        return mac2int(string)
+    elif re.match(ip_fmat, string):
+        return ip2int(string)
+    else:
+        try:
+            return int(string, 0)
+        except ValueError as e:
+            print >> sys.stderr, "ERROR: failed to convert {} to an integer".format(string) 
 
 def parse_table_cam_add_entry(line):
     stmt = line.split('=>')
@@ -290,8 +309,8 @@ def parse_table_cam_add_entry(line):
         sys.exit(1)
     table_name = lhs[0]
     action_name = lhs[1]
-    keys = [int(_, 0) for _ in lhs[2:]]
-    action_data = [int(_, 0) for _ in rhs]
+    keys = map(convert_to_int, lhs[2:])
+    action_data = map(convert_to_int, rhs)
     return (table_name, keys, action_name, action_data)
 
 def parse_table_tcam_add_entry(line):
@@ -315,10 +334,10 @@ def parse_table_tcam_add_entry(line):
         if (len(key_mask) != 2):
             print >> sys.stderr, "ERROR: must specify exactly one mask for each key"
             sys.exit(1)
-        keys.append(int(key_mask[0], 0))
-        masks.append(int(key_mask[1], 0))
+        keys.append(convert_to_int(key_mask[0]))
+        masks.append(convert_to_int(key_mask[1]))
     rhs = searchObj.groupdict()['action_data'].split()
-    action_data = [int(_, 0) for _ in rhs]
+    action_data = map(convert_to_int, rhs)
     return (table_name, address, keys, masks, action_name, action_data)
 
 
@@ -336,12 +355,12 @@ def parse_table_lpm_add_entry(line):
         sys.exit(1)
     prefix = prefix_len[0]
     try:
-        length = int(prefix_len[1], 0)
+        length = convert_to_int(prefix_len[1])
     except:
         print >> sys.stderr, "ERROR: could not convert prefix length to int"
         sys.exit(1)
     rhs = searchObj.groupdict()['action_data'].split()
-    action_data = [int(_, 0) for _ in rhs]
+    action_data = map(convert_to_int, rhs)
     return (table_name, prefix, length, action_name, action_data)
 
 """
