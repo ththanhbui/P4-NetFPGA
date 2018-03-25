@@ -36,6 +36,7 @@ from pprint import pprint
 import p4_regs_api, p4_tables_api
 
 # defines the table_*_add_entry command 
+# also defines convert_to_int()
 from p4_px_tables import *
 
 ### Global Variables ###
@@ -155,7 +156,7 @@ DESCRIPTION: List the exact match tables defined in the SimpleSumeSwitch and the
             self.help_table_cam_read_entry()
             return
         table_name = args[0] 
-        keys = [int(_,0) for _ in args[1:]]
+        keys = map(convert_to_int, args[1:])
         (found, val) = p4_tables_api.table_cam_read_entry(table_name, keys)
         print "Entry found: ", found
         print hex(int(val, 16))
@@ -227,7 +228,7 @@ PARAMS:
             self.help_table_cam_delete_entry()
             return
         table_name = args[0]
-        keys = keys = [int(_,0) for _ in args[1:]]
+        keys = map(convert_to_int, args[1:])
         p4_tables_api.table_cam_delete_entry(table_name, keys)
 
     def help_table_cam_delete_entry(self):
