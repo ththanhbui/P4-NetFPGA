@@ -89,7 +89,7 @@ public:
 
 
 	// engine ctor
-	@EXTERN_NAME@_t(std::string _n, std::string _filename = "") : _name(_n) {
+	@MODULE_NAME@(std::string _n, std::string _filename = "") : _name(_n) {
 
 		// TODO: **********************************
 		// TODO: *** USER ENGINE INITIALIZATION ***
