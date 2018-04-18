@@ -76,6 +76,7 @@ run_scripts:
 	cp testdata/Tuple_in.txt ${SDNET_OUT_DIR}/${P4_SWITCH}/${P4_SWITCH}.TB/Tuple.user
 	# Fix introduced for SDNet 2017.4
 	sed -i 's/xsim\.dir\/xsc\/dpi\.so/dpi\.so/g' ${SDNET_OUT_DIR}/${P4_SWITCH}/vivado_sim.bash
+	sed -i 's/xsim\.dir\/xsc\/dpi\.so/dpi\.so/g' ${SDNET_OUT_DIR}/${P4_SWITCH}/vivado_sim_waveform.bash
 
 config_writes:
 	${SUME_SDNET}/bin/gen_config_writes.py ${SDNET_OUT_DIR}/${P4_SWITCH}/config_writes.txt ${P4_SWITCH_BASE_ADDR} testdata
