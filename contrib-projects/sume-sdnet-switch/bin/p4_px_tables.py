@@ -105,7 +105,7 @@ class PXTable(object):
     """
     def hexify_value(self, action_name, action_data):
         fields = self.extract_fields(self.response_tuple)
-        action_name = '{}.{}'.format(self.block_name, action_name)
+        action_name = '{}.{}'.format(self.block_name, action_name) if action_name != 'NoAction' else '.NoAction'
         if (action_name not in self.actions.keys()):
             print >> sys.stderr, "ERROR: {} is not a recognized action for table {}".format(action_name, self.name)
             sys.exit(1)
