@@ -500,10 +500,13 @@ module sss_output_queues
                   // Send write digest data if necessary
                   if (oq[DMA_QUEUE] == 1) begin
                       // We are sending the pkt over DMA so prepend the digest data to the pkt
-                      wr_en[DMA_QUEUE] = 1;
+                      wr_en[DMA_QUEUE] = send_dig_to_cpu;
                       data_queue_in[DMA_QUEUE] = {1'b0, {(DIGEST_WIDTH/8){1'b1}} , digest_data};
                       metadata_wr_en[DMA_QUEUE] = 1;
-                      metadata_queue_in[DMA_QUEUE] = {s_axis_tuser[C_M_AXIS_TUSER_WIDTH-1:16], s_axis_tuser[15:0] + digest_len};
+                      if (send_dig_to_cpu)
+                          metadata_queue_in[DMA_QUEUE] = {s_axis_tuser[C_M_AXIS_TUSER_WIDTH-1:16], s_axis_tuser[15:0] + digest_len};
+                      else
+                          metadata_queue_in[DMA_QUEUE] = {s_axis_tuser[C_M_AXIS_TUSER_WIDTH-1:16], s_axis_tuser[15:0]};
                   end
                   else if (send_dig_to_cpu) begin
                       // We just want to send the digest data over DMA
