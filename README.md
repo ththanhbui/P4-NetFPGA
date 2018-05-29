@@ -32,6 +32,6 @@
 This repository provides an environment to compile P4 programs to the NetFPGA
 SUME platform. See the following link for documentation:
 
-https://github.com/NetFPGA/NetFPGA-SUME-public/wiki
+https://github.com/NetFPGA/P4-NetFPGA-public/wiki
 
 
