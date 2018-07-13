@@ -392,7 +392,7 @@ module @MODULE_NAME@
                         else if (opCode_2_end == `ADD_OP)
                            @PREFIX_NAME@_r[index_2_end] <= @PREFIX_NAME@_r[index_2_end] + incVal_2_end;
                         else if (opCode_2_end == `SUB_OP)
-                           @PREFIX_NAME@_r[index_2_end] <= @PREFIX_NAME@_r[index_2_end] + incVal_2_end;
+                           @PREFIX_NAME@_r[index_2_end] <= @PREFIX_NAME@_r[index_2_end] - incVal_2_end;
                     end
                 end
             end
