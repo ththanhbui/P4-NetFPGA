@@ -32,14 +32,12 @@
 # Author:
 #        Modified by Neelakandan Manihatty Bojan, Georgina Kalogeridou
 
-import logging
-logging.getLogger("scapy.runtime").setLevel(logging.ERROR)
+import sys, os
 
+sys.stderr = None           # suppress stderr
 from NFTest import *
-import sys
-import os
-#from scapy.layers.all import Ether, IP, TCP
 from scapy.all import *
+sys.stderr = sys.__stderr__ # restore stderr
 
 import config_writes
 
@@ -59,9 +57,11 @@ def try_read_pkts(pcap_file):
     return pkts
 
 def schedule_pkts(pkt_list, iface):
+    print 'scheduling pkts ...'
     for pkt in pkt_list:
         pkt.time = baseTime + delta*pkt.time
         pkt.tuser_sport = nf_port_map[iface]
+    print 'done scheduling pkts ...'
 
 # configure the tables in the P4_SWITCH
 nftest_regwrite(0x440200f0, 0x00000001)
@@ -94,6 +94,8 @@ schedule_pkts(nf1_applied, 'nf1')
 schedule_pkts(nf2_applied, 'nf2')
 schedule_pkts(nf3_applied, 'nf3')
 
+print 'sending pkts ...'
+
 # Apply and check the packets
 nftest_send_phy('nf0', nf0_applied)
 nftest_send_phy('nf1', nf1_applied)
@@ -104,8 +106,14 @@ nftest_expect_phy('nf1', nf1_expected)
 nftest_expect_phy('nf2', nf2_expected)
 nftest_expect_phy('nf3', nf3_expected)
 
+print 'starting barrier ...'
+
 nftest_barrier()
+
+print 'starting nftest_finish ...'
 
 mres=[]
 nftest_finish(mres)
+
+print 'complete !!'
 
