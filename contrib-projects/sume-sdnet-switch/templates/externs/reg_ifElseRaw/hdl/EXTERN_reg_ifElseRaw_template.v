@@ -153,7 +153,6 @@ module @MODULE_NAME@
     wire     [REG_WIDTH-1:0]                   cpu2ip_@PREFIX_NAME@_reg_data_adj;
     wire     [INDEX_WIDTH-1:0]                 cpu2ip_@PREFIX_NAME@_reg_index;
     wire                                       cpu2ip_@PREFIX_NAME@_reg_valid;
-    wire                                       cpu2ip_@PREFIX_NAME@_reg_reset;
 
     wire resetn_sync;
 
@@ -194,7 +193,7 @@ module @MODULE_NAME@
     
         // Make pipeline stages to help with timing
         always @ (posedge clk_lookup) begin
-            if(~resetn_sync | cpu2ip_@PREFIX_NAME@_reg_reset) begin
+            if(~resetn_sync) begin
                 for (j=0; j < NUM_CYCLES-1; j=j+1) begin
                     valid_pipe_r[j] <= 'd0;
                     statefulValid_pipe_r[j] <= 'd0;
@@ -321,7 +320,6 @@ module @MODULE_NAME@
       .cpu2ip_@PREFIX_NAME@_reg_data          (cpu2ip_@PREFIX_NAME@_reg_data),
       .cpu2ip_@PREFIX_NAME@_reg_index         (cpu2ip_@PREFIX_NAME@_reg_index),
       .cpu2ip_@PREFIX_NAME@_reg_valid         (cpu2ip_@PREFIX_NAME@_reg_valid),
-      .cpu2ip_@PREFIX_NAME@_reg_reset         (cpu2ip_@PREFIX_NAME@_reg_reset),
       // Global Registers - user can select if to use
       .cpu_resetn_soft(),//software reset, after cpu module
       .resetn_soft    (),//software reset to cpu module (from central reset management)
@@ -354,7 +352,7 @@ module @MODULE_NAME@
     // drive the registers
     always @(posedge clk_lookup)
     begin
-        if (~resetn_sync | cpu2ip_@PREFIX_NAME@_reg_reset) begin
+        if (~resetn_sync) begin
             valid_final_r <= 'd0;
             index_final_r <= 'd0;
             predicate_result_r <= 'd0;
