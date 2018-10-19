@@ -1,4 +1,3 @@
-
 `timescale 1ns / 1ps
 
 //
@@ -33,7 +32,7 @@
 
 //////////////////////////////////////////////////////////////////////////////////
 // Affiliation: Stanford University
-// Engineer: Stephen Ibanez
+// Author: Stephen Ibanez
 // 
 // Create Date: 03/23/2017
 // Module Name: sume_to_sdnet
@@ -42,37 +41,38 @@
 module sume_to_sdnet (
 
 // clk/rst input
-input                               axi_clk,
-input                               axi_resetn,
+input                               axis_aclk,
+input                               axis_resetn,
 
-// input SUME axi signals
-input                               SUME_axi_tvalid,
-input                               SUME_axi_tlast,
-input                               SUME_axi_tready,
+// input SUME axis signals
+input                               SUME_axis_tvalid,
+input                               SUME_axis_tlast,
+input                               SUME_axis_tready,
 
 // output SDNet signals
 output reg                          SDNet_tuple_VALID,
-output                              SDNet_axi_TLAST
+output                              SDNet_axis_TLAST
 
 );
 
 reg [1:0]   state;
 reg [1:0]   state_next;
 
-(* mark_debug = "true" *) wire [1:0] state_debug = state;
+wire [1:0] state_debug = state;
 
 // states
 localparam FIRST = 0;
 localparam WAIT = 1; 
 
 always @(*) begin
+   // defaults
    state_next = state;
    SDNet_tuple_VALID = 0;
 
    case(state)
      /* wait to complete first cycle of packet */
      FIRST: begin
-         if (SUME_axi_tvalid & SUME_axi_tready) begin
+         if (SUME_axis_tvalid & SUME_axis_tready) begin
              SDNet_tuple_VALID = 1;
              state_next = WAIT;
          end
@@ -80,7 +80,7 @@ always @(*) begin
 
      /* wait until last cycle of packet */
      WAIT: begin
-         if (SUME_axi_tvalid & SUME_axi_tlast & SUME_axi_tready) begin
+         if (SUME_axis_tvalid & SUME_axis_tlast & SUME_axis_tready) begin
              state_next = FIRST;
          end
      end // case: WAIT
@@ -89,8 +89,8 @@ always @(*) begin
 end // always @ (*)
 
 
-always @(posedge axi_clk) begin
-   if(~axi_resetn) begin
+always @(posedge axis_aclk) begin
+   if(~axis_resetn) begin
       state <= FIRST;
    end
    else begin
@@ -100,7 +100,7 @@ end
 
 
 // the SDNet_TLAST signal should only go high when TVALID is high
-assign SDNet_axi_TLAST = SUME_axi_tvalid & SUME_axi_tlast;
+assign SDNet_axis_TLAST = SUME_axis_tvalid & SUME_axis_tlast;
 
 endmodule // sume_to_sdnet
 

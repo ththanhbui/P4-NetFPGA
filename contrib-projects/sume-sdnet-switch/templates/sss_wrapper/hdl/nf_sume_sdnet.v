@@ -37,8 +37,8 @@
 // Create Date: 03/23/2017
 // Module Name: nf_sume_sdnet
 //
-// Note: this version does not use an intermediate fifo for SDNet to SUME.
-// It does not swap endianness of the tuser bus before and after the SDNet module
+// Description: Simple wrapper for SDNet generated modules to make them fit nicely
+//              into the AXI4-Stream based NetFPGA reference switch design.
 //////////////////////////////////////////////////////////////////////////////////
 
 module nf_sume_sdnet #(
@@ -131,21 +131,21 @@ output                                                          S_AXI_AWREADY
 //########################
 //## SUME -> SDNet signals
 //########################
-(* mark_debug = "true" *) wire      sume_tuple_in_VALID;
-(* mark_debug = "true" *) wire      SDNet_in_TLAST;
+wire      sume_tuple_in_VALID;
+wire      SDNet_in_TLAST;
 
 //########################
 //## SDNet -> SUME signals
 //########################
-(* mark_debug = "true" *) wire  [C_S_AXIS_TUSER_WIDTH-1:0]         sume_tuple_out_DATA; 
-(* mark_debug = "true" *) wire                                     digest_tuple_out_VALID; 
-(* mark_debug = "true" *) wire  [DIGEST_WIDTH-1:0]                 digest_tuple_out_DATA; 
+wire  [C_S_AXIS_TUSER_WIDTH-1:0]         sume_tuple_out_DATA; 
+wire  [DIGEST_WIDTH-1:0]                 digest_tuple_out_DATA; 
 
 //#####################
 //## debugging signals
 //#####################
-(* mark_debug = "true" *) wire       sume_tuple_out_VALID; // just used for debugging
-(* mark_debug = "true" *) wire         internal_rst_done;
+wire         sume_tuple_out_VALID;
+wire         digest_tuple_out_VALID; 
+wire         internal_rst_done;
 
 //##################################
 //## Logic to convert the SUME TUSER signal into the SDNet 
@@ -154,17 +154,17 @@ output                                                          S_AXI_AWREADY
 sume_to_sdnet sume_to_sdnet_i (
 
 // clk/rst input
-.axi_clk                         (axis_aclk),
-.axi_resetn                      (axis_resetn),
+.axis_aclk                        (axis_aclk),
+.axis_resetn                      (axis_resetn),
 
 // input SUME axi signals
-.SUME_axi_tvalid                 (s_axis_tvalid),
-.SUME_axi_tlast                  (s_axis_tlast),
-.SUME_axi_tready                 (s_axis_tready),
+.SUME_axis_tvalid                 (s_axis_tvalid),
+.SUME_axis_tlast                  (s_axis_tlast),
+.SUME_axis_tready                 (s_axis_tready),
 
 // output SDNet signals
-.SDNet_tuple_VALID               (sume_tuple_in_VALID),
-.SDNet_axi_TLAST                 (SDNet_in_TLAST)
+.SDNet_tuple_VALID                (sume_tuple_in_VALID),
+.SDNet_axis_TLAST                 (SDNet_in_TLAST)
 
 ); // sume_to_sdnet_i
 
@@ -215,9 +215,9 @@ SimpleSumeSwitch SimpleSumeSwitch_inst (
 .packet_out_packet_out_TLAST                                       (m_axis_tlast),
 
 // TUPLE OUTPUT INTERFACE
-.tuple_out_sume_metadata_VALID                                     (sume_tuple_out_VALID), // this is currently not used
+.tuple_out_sume_metadata_VALID                                     (sume_tuple_out_VALID),   // unused
 .tuple_out_sume_metadata_DATA                                      (sume_tuple_out_DATA),
-.tuple_out_digest_data_VALID                                       (digest_tuple_out_VALID),
+.tuple_out_digest_data_VALID                                       (digest_tuple_out_VALID), // unused
 .tuple_out_digest_data_DATA                                        (digest_tuple_out_DATA),
 
 // LINE CLK & RST SIGNALS
