@@ -72,13 +72,12 @@ def get_extern_annotations():
             sys.exit(1)       
         extern_dict['max_cycles'] = int(extern_dict['annotations']['Xilinx_MaxLatency'][0])
 
-def get_extern_annotation(name):
+def get_extern_annotation(annotation_name, extern_dict):
     global p4_externs
-    for extern_name, extern_dict in p4_externs.items():
-        if name not in extern_dict['annotations'].keys():
-            print >> sys.stderr, "ERROR: @{} annotation unspecified for extern: {}".format(name, extern_name)
-            sys.exit(1)
-        return int(extern_dict['annotations'][name][0])
+    if annotation_name not in extern_dict['annotations'].keys():
+        print >> sys.stderr, "ERROR: @{} annotation unspecified for extern: {}".format(annotation_name, extern_dict['p4_name'])
+        sys.exit(1)
+    return int(extern_dict['annotations'][annotation_name][0])
 
 """
 Read P4_SWITCH.h to determine the offset address and compute the base address
@@ -150,7 +149,7 @@ def run_replace_cmd(contents, pattern, cmd, extern_dict):
     searchObj = re.search(r"annotation\((.*)\)", cmd)
     if searchObj is not None:
         annotation_name = searchObj.group(1)
-        annotation_content = get_extern_annotation(annotation_name)
+        annotation_content = get_extern_annotation(annotation_name, extern_dict)
         return contents.replace(pattern, str(annotation_content))
     elif (cmd == 'extern_name'):
         return contents.replace(pattern, extern_dict['prefix_name'] + '_' + extern_dict['extern_type'])
