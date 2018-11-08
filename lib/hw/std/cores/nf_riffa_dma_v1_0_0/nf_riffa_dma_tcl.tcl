@@ -138,7 +138,7 @@ foreach verilog_file $VerilogFiles {
 #add_files -scan_for_includes -norecurse ${verilog_file}
 
 # Generate Xilinx AXIS-FIFO (xci)
-create_ip -name fifo_generator -vendor xilinx.com -library ip -version 13.1 -module_name ${xil_ip}
+create_ip -name fifo_generator -vendor xilinx.com -library ip -version 13.2 -module_name ${xil_ip}
 foreach item [dict keys $axis_fifo_params] {
 	set val [dict get $axis_fifo_params $item]	
 	set_property $item $val [get_ips ${xil_ip}]				
