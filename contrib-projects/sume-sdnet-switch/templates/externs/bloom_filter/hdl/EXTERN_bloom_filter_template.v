@@ -102,7 +102,7 @@ module @MODULE_NAME@
     wire full_fifo;
     reg rd_en_fifo;
 
-    localparam L2_REQ_BUF_DEPTH = 6;
+    localparam L2_REQ_BUF_DEPTH = 7;
     
     // Data plane state machine signals
     reg [2:0]                     d_state, d_state_next;
