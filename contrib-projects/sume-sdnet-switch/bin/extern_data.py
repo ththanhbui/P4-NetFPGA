@@ -101,6 +101,14 @@ extern_data = {
               "cpp_template_file": "externs/ip_chksum/cpp/EXTERN_ip_chksum_template.hpp",
               "replacements": {"@MODULE_NAME@": "module_name",
                                "@EXTERN_NAME@": "extern_name"}
+},
+
+"bloom_filter" : {"hdl_template_file": "externs/bloom_filter/hdl/EXTERN_bloom_filter_template.v",
+                  "replacements": {"@EXTERN_NAME@" : "extern_name",
+                              "@MODULE_NAME@" : "module_name",
+                              "@KEY_WIDTH@" : "input_width(index)",
+                              "@HASH_WIDTH@" : "annotation(BloomFilterHashWidth)",
+                              "@HASH_COUNT@" : "annotation(BloomFilterHashCount)"}
 }
 
 }
