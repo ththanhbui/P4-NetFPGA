@@ -275,19 +275,17 @@ module @MODULE_NAME@
           end
 
           WAIT_BRAM: begin
-            // Cycle i (HASH_COUNT + 1 <= i <= HASH_COUNT + 2):
+            // Cycle i (i == HASH_COUNT + 1):
             //     We simply retrieve the bit queried at cycle i-2
             cycle_cnt_next = cycle_cnt + 1;         
             result_r_next = d_data_out_bram & result_r; // AND the value of all retrieved bits
-            if (cycle_cnt == HASH_COUNT + 2) begin
-              d_state_next = WRITE_RESULT;
-              key_fifo_reg_next = 0;             
-            end
+            d_state_next = WRITE_RESULT;
+            key_fifo_reg_next = 0;
           end
 
           WRITE_RESULT: begin
               valid_out = 1;
-              result_out = result_r;
+              result_out = d_data_out_bram & result_r; // AND the value of all retrieved bits
               d_state_next = START_REQ;
               cycle_cnt_next = 0;
               opcode_fifo_reg_next = OP_INVALID;
