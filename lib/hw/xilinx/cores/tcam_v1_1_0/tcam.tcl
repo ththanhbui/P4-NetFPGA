@@ -75,7 +75,7 @@ ipx::package_project
 set_property name ${design} [ipx::current_core]
 set_property library ${lib_name} [ipx::current_core]
 set_property vendor_display_name {xilinx} [ipx::current_core]
-set_property company_url {www.xilinx.com} [ipx::current_core]
+set_property company_url {http://www.xilinx.com} [ipx::current_core]
 set_property vendor {xilinx} [ipx::current_core]
 set_property supported_families {{virtex7} {Production}} [ipx::current_core]
 set_property taxonomy {{/NetFPGA/Generic}} [ipx::current_core]

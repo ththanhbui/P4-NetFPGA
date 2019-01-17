@@ -345,36 +345,6 @@
 `define UPKT_REQ_WR 4'b0001
 `define UPKT_MSG 4'b1100
 
-function [ `EXT_TYPE_W - 1: 0 ] upkt_to_trellis_type;
-    input [`UPKT_TYPE_W : 0 ] WR_UPKT_TYPE;
-    begin
-        /* verilator lint_off CASEX */
-        casex(WR_UPKT_TYPE)
-            {`UPKT_REQ_RD,1'bx}: upkt_to_trellis_type = `TRLS_REQ_RD;
-            {`UPKT_REQ_WR,1'bx}: upkt_to_trellis_type = `TRLS_REQ_WR;
-            {`UPKT_MSG   ,1'b0}: upkt_to_trellis_type = `TRLS_MSG_ND;
-            {`UPKT_MSG   ,1'b1}: upkt_to_trellis_type = `TRLS_MSG_WD;
-            default:             upkt_to_trellis_type = `TRLS_REQ_RD;
-        endcase
-        /* verilator lint_on CASEX */
-    end
-endfunction // if
-
-function [`UPKT_TYPE_W - 1 : 0 ] trellis_to_upkt_type;
-    input  [ `EXT_TYPE_W - 1 : 0 ] trellis_type;
-    begin
-        /* verilator lint_off CASEX */
-        casex(trellis_type)
-            `TRLS_REQ_RD : trellis_to_upkt_type = `UPKT_REQ_RD;
-            `TRLS_REQ_WR : trellis_to_upkt_type = `UPKT_REQ_WR;
-            `TRLS_MSG_ND : trellis_to_upkt_type = `UPKT_MSG; // We only use messages routed by address
-            `TRLS_MSG_WD : trellis_to_upkt_type = `UPKT_MSG; // We only use messages routed by address
-            default      : trellis_to_upkt_type = `UPKT_REQ_RD;
-        endcase
-        /* verilator lint_on CASEX */
-    end
-endfunction // if
-
 `endif
 
 

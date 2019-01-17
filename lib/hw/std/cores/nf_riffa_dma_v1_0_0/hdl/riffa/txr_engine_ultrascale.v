@@ -293,6 +293,21 @@ module txr_formatter_ultrascale
      input                         TX_HDR_READY
      );
 
+    function [`UPKT_TYPE_W - 1 : 0 ] trellis_to_upkt_type;
+        input  [ `EXT_TYPE_W - 1 : 0 ] trellis_type;
+        begin
+            /* verilator lint_off CASEX */
+            casex(trellis_type)
+                `TRLS_REQ_RD : trellis_to_upkt_type = `UPKT_REQ_RD;
+                `TRLS_REQ_WR : trellis_to_upkt_type = `UPKT_REQ_WR;
+                `TRLS_MSG_ND : trellis_to_upkt_type = `UPKT_MSG; // We only use messages routed by address
+                `TRLS_MSG_WD : trellis_to_upkt_type = `UPKT_MSG; // We only use messages routed by address
+                default      : trellis_to_upkt_type = `UPKT_REQ_RD;
+            endcase
+            /* verilator lint_on CASEX */
+        end
+    endfunction // if
+
     wire                           wHdrNoPayload;
     wire [`UPKT_TXR_MAXHDR_W-1:0]  wHdr;
     
