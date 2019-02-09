@@ -42,16 +42,19 @@ SWITCH_INFO=src/.sdnet_switch_info.dat
 # Compile to HDL with P4-SDNet
 # Running vivado_sim.bash or questa.bash compares the HDL simulation output to user provided expected output 
 all: clean frontend compile_no_cpp_test run_scripts
-	rsync -av --ignore-missing-args src/*.tbl ${SDNET_OUT_DIR}/${P4_SWITCH}/
+	cp src/*.tbl ${SDNET_OUT_DIR}/${P4_SWITCH}/
 	cp testdata/*.txt ${SDNET_OUT_DIR}/${P4_SWITCH}/
 	cp testdata/*.axi ${SDNET_OUT_DIR}/${P4_SWITCH}/
 
 # Compile to HDL with P4-SDNet
 # Running vivado_sim.bash or questa.bash compares the HDL simulation output to the C++ simulation output
 cpp_test: clean frontend compile_cpp_test run_scripts 
-	rsync -av --ignore-missing-args src/*.tbl ${SDNET_OUT_DIR}/${P4_SWITCH}/
+	cp src/*.tbl ${SDNET_OUT_DIR}/${P4_SWITCH}/
 	cp testdata/src.pcap ${SDNET_OUT_DIR}/${P4_SWITCH}/Packet.user
 	cp testdata/Tuple_in.txt ${SDNET_OUT_DIR}/${P4_SWITCH}/Tuple.user
+	cp src/*.tbl ${SDNET_OUT_DIR}/${P4_SWITCH}/${P4_SWITCH}.TB/
+	cp testdata/src.pcap ${SDNET_OUT_DIR}/${P4_SWITCH}/${P4_SWITCH}.TB/Packet.user
+	cp testdata/Tuple_in.txt ${SDNET_OUT_DIR}/${P4_SWITCH}/${P4_SWITCH}.TB/Tuple.user
 
 frontend:
 	make -C src/
@@ -71,12 +74,12 @@ run_scripts:
 	sed -i 's/vsim/vsim \-ldflags \"\-B\/usr\/lib\/x86\_64\-linux-gnu\"/g' ${SDNET_OUT_DIR}/${P4_SWITCH}/questa.bash
 	# modify the P4_SWITCH_tb so that it writes the table configuration writes to a file
 	${SUME_SDNET}/bin/modify_P4_SWITCH_tb.py ${SDNET_OUT_DIR}/${P4_SWITCH}/Testbench/${P4_SWITCH}_tb.sv
-	rsync -av --ignore-missing-args src/*.tbl ${SDNET_OUT_DIR}/${P4_SWITCH}/${P4_SWITCH}.TB/
-	cp testdata/src.pcap ${SDNET_OUT_DIR}/${P4_SWITCH}/${P4_SWITCH}.TB/Packet.user
-	cp testdata/Tuple_in.txt ${SDNET_OUT_DIR}/${P4_SWITCH}/${P4_SWITCH}.TB/Tuple.user
 	# Fix introduced for SDNet 2017.4
 	sed -i 's/xsim\.dir\/xsc\/dpi\.so/dpi\.so/g' ${SDNET_OUT_DIR}/${P4_SWITCH}/vivado_sim.bash
 	sed -i 's/xsim\.dir\/xsc\/dpi\.so/dpi\.so/g' ${SDNET_OUT_DIR}/${P4_SWITCH}/vivado_sim_waveform.bash
+	# Fix introduced for SDNet 2018.2
+	sed -i 's/glbl_sim/glbl/g' ${SDNET_OUT_DIR}/${P4_SWITCH}/vivado_sim_waveform.bash
+	sed -i 's/SimpleSumeSwitch_tb_sim#work.glbl/SimpleSumeSwitch_tb/g' ${SDNET_OUT_DIR}/${P4_SWITCH}/vivado_sim_waveform.bash
 
 config_writes:
 	${SUME_SDNET}/bin/gen_config_writes.py ${SDNET_OUT_DIR}/${P4_SWITCH}/config_writes.txt ${P4_SWITCH_BASE_ADDR} testdata
