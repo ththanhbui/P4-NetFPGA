@@ -28,5 +28,7 @@
 set bitimage [lindex $argv 1]
 puts "RUN loading image file."
 puts $bitimage
+connect
+targets 1
 fpga -f $bitimage
 exit
