@@ -1,5 +1,6 @@
 #
 # Copyright (c) 2015 University of Cambridge
+# Modified by Salvator Galea
 # All rights reserved.
 #
 # This software was developed by Stanford University and the University of Cambridge Computer Laboratory 
@@ -31,15 +32,14 @@
 
 set design [lindex $argv 0] 
 
+puts "\nOpening $design XPR project\n"
 open_project project/$design.xpr
 
-set bd_file [get_files -regexp -nocase {.*sub*.bd}] 
-
-open_bd_design $bd_file
+puts "\nOpening $design Implementation design\n"
 open_run impl_1
-#export_hardware $bd_file [get_runs impl_1] -bitstream -dir ../sw/embedded/project
-file mkdir ../sw/embedded/project
-file mkdir ../sw/embedded/project/hw
-file copy -force project/simple_sume_switch.runs/impl_1/top.sysdef ../sw/embedded/project/hw/simple_sume_switch.hdf
+
+puts "\nCopying top.sysdef\n"
+file copy -force ./project/$design.runs/impl_1/top.sysdef ../sw/embedded/$design.hdf
+
 exit
 
