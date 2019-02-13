@@ -244,17 +244,15 @@ control TopPipe(inout Parsed_packet p,
         sume_metadata.dst_port = port;
     }
 
-    action nop() {}
-
     table forward {
         key = { p.ethernet.dstAddr: exact; }
 
         actions = {
             set_output_port;
-            nop;
+            NoAction;
         }
         size = 64;
-        default_action = nop;
+        default_action = NoAction;
     }
 
     setBosPipe() setBosPipe_inst;
@@ -269,19 +267,19 @@ control TopPipe(inout Parsed_packet p,
                 p.INT.e = 1;
             } else {
                 // fill INT header fields
-                p.int_egress_port_id.egress_port_id = 23w0++sume_metadata.dst_port;
+                p.int_egress_port_id.egress_port_id = (bit<31>)sume_metadata.dst_port;
                 tin_timestamp(1w1, p.int_ingress_tstamp.ingress_tstamp);
-                p.int_ingress_port_id.ingress_port_id = 23w0++sume_metadata.src_port;
+                p.int_ingress_port_id.ingress_port_id = (bit<31>)sume_metadata.src_port;
 
                 // write output queue size
                 if (sume_metadata.dst_port == 8w0b0000_0001) {
-                    p.int_q_occupancy.q_occupancy = 15w0++sume_metadata.nf0_q_size;
+                    p.int_q_occupancy.q_occupancy = (bit<31>)sume_metadata.nf0_q_size;
                 } else if (sume_metadata.dst_port == 8w0b0000_0100) {
-                    p.int_q_occupancy.q_occupancy = 15w0++sume_metadata.nf1_q_size;
+                    p.int_q_occupancy.q_occupancy = (bit<31>)sume_metadata.nf1_q_size;
                 } else if (sume_metadata.dst_port == 8w0b0001_0000) {
-                    p.int_q_occupancy.q_occupancy = 15w0++sume_metadata.nf2_q_size;
+                    p.int_q_occupancy.q_occupancy = (bit<31>)sume_metadata.nf2_q_size;
                 } else if (sume_metadata.dst_port == 8w0b0100_0000) {
-                    p.int_q_occupancy.q_occupancy = 15w0++sume_metadata.nf3_q_size;
+                    p.int_q_occupancy.q_occupancy = (bit<31>)sume_metadata.nf3_q_size;
                 } else {
                     p.int_q_occupancy.q_occupancy = 31w0x7FFF_FFFF; // special value meaning not currently available
                 }
