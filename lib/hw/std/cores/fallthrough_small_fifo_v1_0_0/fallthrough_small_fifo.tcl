@@ -59,7 +59,7 @@ ipx::package_project
 set_property name ${design} [ipx::current_core]
 set_property library ${lib_name} [ipx::current_core]
 set_property vendor_display_name {NetFPGA} [ipx::current_core]
-set_property company_url {www.netfpga.org} [ipx::current_core]
+set_property company_url {http://www.netfpga.org} [ipx::current_core]
 set_property vendor {NetFPGA} [ipx::current_core]
 set_property supported_families {{virtex7} {Production}} [ipx::current_core]
 set_property taxonomy {{/NetFPGA/Generic}} [ipx::current_core]

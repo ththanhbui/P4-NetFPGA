@@ -43,14 +43,14 @@ fi
 
 if [ "$xilinx_tool_path" == "" ]; then
 	echo
-	echo Source Xilinx tool to run xmd command for programming a bit file. 
+	echo Source Xilinx tool to run xsct command for programming a bit file. 
 	echo
 	exit 1
 fi
 
 rmmod sume_riffa
 
-xmd -tcl run_xmd.tcl -tclargs $bitimage
+xsct ${SUME_SDNET}/tools/run_xsct.tcl -tclargs $bitimage
 
 bash ${SUME_SDNET}/tools/pci_rescan_run.sh
 

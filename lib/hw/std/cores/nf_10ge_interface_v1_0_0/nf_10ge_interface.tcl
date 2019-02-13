@@ -73,7 +73,7 @@ set_property display_name ${design} [ipx::current_core]
 set_property description ${design} [ipx::current_core]
 set_property taxonomy {{/NetFPGA/Data_Path}} [ipx::current_core]
 set_property vendor_display_name {NetFPGA} [ipx::current_core]
-set_property company_url {www.netfpga.org} [ipx::current_core]
+set_property company_url {http://www.netfpga.org} [ipx::current_core]
 set_property supported_families {{virtex7} {Production}} [ipx::current_core]
 
 ipx::add_bus_parameter FREQ_HZ [ipx::get_bus_interfaces m_axis -of_objects [ipx::current_core]]

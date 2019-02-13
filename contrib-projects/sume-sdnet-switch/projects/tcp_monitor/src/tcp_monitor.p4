@@ -188,17 +188,15 @@ control TopPipe(inout Parsed_packet p,
         sume_metadata.dst_port = port;
     }
 
-    action nop() {}
-
     table forward {
         key = { p.ethernet.dstAddr: exact; }
 
         actions = {
             set_output_port;
-            nop;
+            NoAction;
         }
         size = 64;
-        default_action = nop;
+        default_action = NoAction;
     }
 
     apply {
