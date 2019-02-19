@@ -75,6 +75,7 @@ sume:
 	make -C $(LIB_HW_DIR)/contrib/cores/nf_endianess_manager_v1_0_0/
 	make -C $(LIB_HW_DIR)/std/cores/fallthrough_small_fifo_v1_0_0/
 	make -C $(LIB_HW_DIR)/std/cores/input_arbiter_v1_0_0/
+	make -C $(LIB_HW_DIR)/std/cores/output_arbiter_v1_0_0/
 	make -C $(LIB_HW_DIR)/std/cores/output_queues_v1_0_0/
 	#make -C $(LIB_HW_DIR)/std/cores/router_output_port_lookup_v1_0_0/
 	#make -C $(LIB_HW_DIR)/std/cores/switch_output_port_lookup_v1_0_1/
@@ -93,6 +94,7 @@ sume:
 	make -C $(LIB_HW_DIR)/std/cores/nf_10ge_interface_v1_0_0/
 	make -C $(LIB_HW_DIR)/contrib/cores/sss_fallthrough_small_fifo_v1_0_0/
 	make -C $(LIB_HW_DIR)/contrib/cores/sss_output_queues_v2_0_0/
+	make -C $(LIB_HW_DIR)/contrib/cores/sss_cache_queues_v1_0_0/
 	make -C $(LIB_HW_DIR)/contrib/cores/input_arbiter_drr_v1_0_0/
 	@echo "/////////////////////////////////////////";
 	@echo "//Library cores created.";
@@ -169,4 +171,3 @@ swclean:
 	@echo "/////////////////////////////////////////";
 	@echo "//SW Library cleaned.";
 	@echo "/////////////////////////////////////////";
-
