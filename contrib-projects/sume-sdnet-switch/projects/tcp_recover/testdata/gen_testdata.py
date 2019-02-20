@@ -76,7 +76,7 @@ def expPkt(pkt, egress, drop):
     sss_sdnet_tuples.write_tuples()
     if egress in ["nf0","nf1","nf2","nf3"] and drop == False:
         nf_expected[nf_id_map[egress]].append(pkt)
-        nf_expected[nf_id_map[egress]].append(pkt)
+        #nf_expected[nf_id_map[egress]].append(pkt)
     elif egress == 'bcast' and drop == False:
         nf_expected[0].append(pkt)
         nf_expected[0].append(pkt)
@@ -178,6 +178,6 @@ applyPkt(pkt, ingress, i)
 
 egress = "nf0"
 expPkt(pkt, egress, drop)
-
+expPkt(pkt, egress, drop)
 write_pcap_files()
 

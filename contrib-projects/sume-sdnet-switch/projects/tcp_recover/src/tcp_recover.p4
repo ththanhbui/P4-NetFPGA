@@ -379,7 +379,7 @@ control TopPipe(inout Parsed_packet p,
                             // pkts_cached_cnt_even_reg_raw(hash_result, 0, 0, REG_WRITE, dropCount);
 
                         } else {
-                            pkts_cached_cnt_odd_reg_raw(hash_result, 0, 0, REG_READ, dropCount);
+                            // pkts_cached_cnt_odd_reg_raw(hash_result, 0, 0, REG_READ, dropCount);
                         } // comment this `else` clause and it will work 
 
                     // } else {
