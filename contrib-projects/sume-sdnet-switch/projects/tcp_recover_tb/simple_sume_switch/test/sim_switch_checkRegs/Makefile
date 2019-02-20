@@ -1,5 +1,3 @@
-#!/bin/bash
-
 #
 # Copyright (c) 2017 Stephen Ibanez
 # All rights reserved.
@@ -30,7 +28,13 @@
 #
 
 
-# Program the switch with the bit file and then configure the tables
-${SUME_SDNET}/tools/program_switch.sh tcp_recover.bit config_writes.sh
+# Makefile to set up the simulation environment with the test data
 
+SDNET_BASE_ADDR=0x44020000
 
+all: clean
+	cp ${P4_PROJECT_DIR}/testdata/config_writes.py ./ 
+
+clean:
+	rm -f config_writes.py
+	rm -f *.pyc

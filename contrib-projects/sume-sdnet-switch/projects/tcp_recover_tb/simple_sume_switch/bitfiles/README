@@ -1,7 +1,5 @@
-#!/bin/bash
-
 #
-# Copyright (c) 2017 Stephen Ibanez
+# Copyright (c) 2015 University of Cambridge
 # All rights reserved.
 #
 # This software was developed by Stanford University and the University of Cambridge Computer Laboratory 
@@ -29,8 +27,10 @@
 # @NETFPGA_LICENSE_HEADER_END@
 #
 
+Reference switch bitfile is available for a direct download from the University of Cambridge servers:
 
-# Program the switch with the bit file and then configure the tables
-${SUME_SDNET}/tools/program_switch.sh tcp_recover.bit config_writes.sh
+1. Reference switch
+url: http://www.cl.cam.ac.uk/research/srg/netos/projects/netfpga/bitfiles/NetFPGA-SUME-live/1.3.0/reference_switch/reference_switch.bit
+md5 checksum: a6e72260567abe2edd83a178150eccff
 
 

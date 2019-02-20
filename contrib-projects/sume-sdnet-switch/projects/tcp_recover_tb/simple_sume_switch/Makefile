@@ -1,8 +1,16 @@
-#!/bin/bash
-
 #
-# Copyright (c) 2017 Stephen Ibanez
+# Copyright (c) 2015 Noa Zilberman
 # All rights reserved.
+#
+#  File:
+#        Makefile
+#
+#  Project:
+#        reference projects
+#
+#
+#  Description:
+#        This makefile is used to generate and compile SDK project for NetFPGA reference projects.
 #
 # This software was developed by Stanford University and the University of Cambridge Computer Laboratory 
 # under National Science Foundation under Grant No. CNS-0855268,
@@ -28,9 +36,25 @@
 #
 # @NETFPGA_LICENSE_HEADER_END@
 #
+# Vivado Launch Script
+################################################################################
 
 
-# Program the switch with the bit file and then configure the tables
-${SUME_SDNET}/tools/program_switch.sh tcp_recover.bit config_writes.sh
+HW = hw
+SW = sw/embedded/
+TEST = test
+
+all:    clean
+	make -C ${HW} project
+	make -C ${HW} export_to_sdk
+	make -C ${SW} project
+	make -C ${SW} compile
+	make -C ${HW} load_elf
+
+
+clean:
+	make -C ${HW} distclean
+	make -C ${SW} distclean
+	rm -rfv vivado*;\
 
 

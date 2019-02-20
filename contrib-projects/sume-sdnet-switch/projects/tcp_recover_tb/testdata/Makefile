@@ -1,5 +1,3 @@
-#!/bin/bash
-
 #
 # Copyright (c) 2017 Stephen Ibanez
 # All rights reserved.
@@ -30,7 +28,14 @@
 #
 
 
-# Program the switch with the bit file and then configure the tables
-${SUME_SDNET}/tools/program_switch.sh tcp_recover.bit config_writes.sh
+# Makefile to build the testdata
+
+all:
+	./gen_testdata.py
+	${SUME_SDNET}/bin/pcap2axi --output Packet_in.axi --bus_width 256 src.pcap
+	${SUME_SDNET}/bin/pcap2axi --output Packet_expect.axi --bus_width 256 dst.pcap
+
+clean:
+	rm -f *.pcap *.txt *.pyc *.axi config_writes.* *_reg_defines.py
 
 

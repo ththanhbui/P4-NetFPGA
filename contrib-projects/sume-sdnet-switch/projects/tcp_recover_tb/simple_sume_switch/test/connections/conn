@@ -1,7 +1,5 @@
-#!/bin/bash
-
 #
-# Copyright (c) 2017 Stephen Ibanez
+# Copyright (c) 2015 University of Cambridge
 # All rights reserved.
 #
 # This software was developed by Stanford University and the University of Cambridge Computer Laboratory 
@@ -30,7 +28,7 @@
 #
 
 
-# Program the switch with the bit file and then configure the tables
-${SUME_SDNET}/tools/program_switch.sh tcp_recover.bit config_writes.sh
-
-
+nf0:eth1
+nf1:eth2
+nf2:
+nf3:

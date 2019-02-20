@@ -1,14 +1,20 @@
-#!/bin/bash
 
 #
-# Copyright (c) 2017 Stephen Ibanez
+# Copyright (c) 2015 Digilent Inc.
+# Copyright (c) 2015 Tinghui Wang (Steve)
 # All rights reserved.
 #
-# This software was developed by Stanford University and the University of Cambridge Computer Laboratory 
-# under National Science Foundation under Grant No. CNS-0855268,
-# the University of Cambridge Computer Laboratory under EPSRC INTERNET Project EP/H040536/1 and
-# by the University of Cambridge Computer Laboratory under DARPA/AFRL contract FA8750-11-C-0249 ("MRC2"), 
-# as part of the DARPA MRC research programme.
+#  File:
+#        download.tcl
+#
+#  Project:
+#        acceptance_test
+#
+#  Author:
+#        Tinghui Wang (Steve)
+#
+#  Description:
+#        Downloads the acceptance test elf 
 #
 # @NETFPGA_LICENSE_HEADER_START@
 #
@@ -29,8 +35,7 @@
 # @NETFPGA_LICENSE_HEADER_END@
 #
 
-
-# Program the switch with the bit file and then configure the tables
-${SUME_SDNET}/tools/program_switch.sh tcp_recover.bit config_writes.sh
-
-
+fpga -f [lindex $argv 0]
+connect mb mdm
+dow SDK_Workspace/project/Debug/project.elf
+run

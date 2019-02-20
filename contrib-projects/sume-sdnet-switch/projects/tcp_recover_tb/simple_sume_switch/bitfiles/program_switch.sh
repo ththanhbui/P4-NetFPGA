@@ -31,6 +31,6 @@
 
 
 # Program the switch with the bit file and then configure the tables
-${SUME_SDNET}/tools/program_switch.sh tcp_recover.bit config_writes.sh
+${SUME_SDNET}/tools/program_switch.sh tcp_recover_tb.bit config_writes.sh
 
 

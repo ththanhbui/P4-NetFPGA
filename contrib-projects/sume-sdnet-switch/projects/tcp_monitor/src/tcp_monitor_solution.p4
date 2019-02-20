@@ -270,10 +270,8 @@ control TopPipe(inout Parsed_packet p,
  
             // access the distribution register 
             bit<32> result; 
-            dist_reg_raw(index, newVal, incVal, opCode, result);
-
+            dist_reg_raw(index, newVal, incVal, opCode, result); 
         }
-
     }
 }
 

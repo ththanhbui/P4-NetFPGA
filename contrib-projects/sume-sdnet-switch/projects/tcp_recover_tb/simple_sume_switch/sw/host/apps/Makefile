@@ -1,8 +1,9 @@
-#!/bin/bash
-
 #
-# Copyright (c) 2017 Stephen Ibanez
+# Copyright (c) 2015 Bjoern A. Zeeb
 # All rights reserved.
+#
+#  File:
+#        Makefile
 #
 # This software was developed by Stanford University and the University of Cambridge Computer Laboratory 
 # under National Science Foundation under Grant No. CNS-0855268,
@@ -29,8 +30,13 @@
 # @NETFPGA_LICENSE_HEADER_END@
 #
 
+all:	rwaxi
 
-# Program the switch with the bit file and then configure the tables
-${SUME_SDNET}/tools/program_switch.sh tcp_recover.bit config_writes.sh
+rwaxi:
+	cc -Wall -Werror -o rwaxi rwaxi.c \
+		-I../driver
 
+clean:
+	rm -f rwaxi
 
+# end

@@ -1,7 +1,6 @@
-#!/bin/bash
-
 #
-# Copyright (c) 2017 Stephen Ibanez
+# Copyright (c) 2015 University of Cambridge
+# Modified by Salvator Galea
 # All rights reserved.
 #
 # This software was developed by Stanford University and the University of Cambridge Computer Laboratory 
@@ -19,7 +18,8 @@
 # "License"); you may not use this file except in compliance with the
 # License.  You may obtain a copy of the License at:
 #
-#   http://www.netfpga-cic.org
+#   http://netfpga-cic.org
+#
 #
 # Unless required by applicable law or agreed to in writing, Work distributed
 # under the License is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR
@@ -30,7 +30,16 @@
 #
 
 
-# Program the switch with the bit file and then configure the tables
-${SUME_SDNET}/tools/program_switch.sh tcp_recover.bit config_writes.sh
+set design [lindex $argv 0] 
 
+puts "\nOpening $design XPR project\n"
+open_project project/$design.xpr
+
+puts "\nOpening $design Implementation design\n"
+open_run impl_1
+
+puts "\nCopying top.sysdef\n"
+file copy -force ./project/$design.runs/impl_1/top.sysdef ../sw/embedded/$design.hdf
+
+exit
 

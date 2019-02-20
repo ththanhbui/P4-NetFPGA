@@ -55,6 +55,11 @@ typedef bit<32> IPv4Addr_t;
 #define REG_WRITE  8w1
 #define REG_ADD    8w2
 
+#define EQ_RELOP    8w0
+#define NEQ_RELOP   8w1
+#define GT_RELOP    8w2
+#define LT_RELOP    8w3
+
 #define HASH_WIDTH 5
 
 #define PKT_SIZE 128
@@ -85,13 +90,16 @@ extern void odd_even_reg_raw(in bit<HASH_WIDTH> index,
                              out bit<32> result);
 
 // latest_seq_no register
-@Xilinx_MaxLatency(64)
+@Xilinx_MaxLatency(1)
 @Xilinx_ControlWidth(HASH_WIDTH)
-extern void seq_no_reg_raw(in bit<HASH_WIDTH> index,
+extern void seq_no_reg_praw(in bit<HASH_WIDTH> index,
                              in bit<32> newVal,
                              in bit<32> incVal,
                              in bit<8> opCode,
-                             out bit<32> result);
+                             in bit<32> compVal,
+                             in bit<8> relOp, 
+                             out bit<32> result,
+                             out bit<1> boolean);
 
 @Xilinx_MaxLatency(64)
 @Xilinx_ControlWidth(HASH_WIDTH)
@@ -144,7 +152,16 @@ extern void retransmit_cnt_reg_raw(in bit<HASH_WIDTH> index,
                          in bit<32> newVal,
                          in bit<32> incVal,
                          in bit<8> opCode,
-                         out bit<32> result);                   
+                         out bit<32> result);
+
+// byte_cnt register
+@Xilinx_MaxLatency(64)
+@Xilinx_ControlWidth(HASH_WIDTH)
+extern void byte_cnt_reg_raw(in bit<HASH_WIDTH> index,
+                             in bit<32> newVal,
+                             in bit<32> incVal,
+                             in bit<8> opCode,
+                             out bit<32> result);            
 
 // standard Ethernet header
 header Ethernet_h { 
@@ -276,8 +293,6 @@ control TopPipe(inout Parsed_packet p,
         digest_data.tuser = 24w0++drop_count++cache_port++UNUSED++UNUSED;
     }
 
-    action nop() {}
-
     action compute_flow_id(bit<1> i) {
         if (i == 1) { // is an ACK
             digest_data.flow_id = p.ip.dstAddr++p.ip.srcAddr++p.ip.protocol++p.tcp.dstPort++p.tcp.srcPort;
@@ -291,10 +306,10 @@ control TopPipe(inout Parsed_packet p,
 
         actions = {
             set_output_port;
-            nop;
+            NoAction;
         }
         size = 64;
-        default_action = nop;
+        default_action = NoAction;
     }
 
     table forward {
@@ -302,10 +317,10 @@ control TopPipe(inout Parsed_packet p,
 
         actions = {
             set_output_port;
-            nop;
+            NoAction;
         }
         size = 64;
-        default_action = nop;
+        default_action = NoAction;
     }
 
     apply {
@@ -339,28 +354,29 @@ control TopPipe(inout Parsed_packet p,
                     // Is an ACK packet
                 
                     // metadata for register access
-                    bit<32> latestSeqNo;
+                    bit<32> latestSeqNo = 0;
                     bit<32> earliestSeqNo;
                     bit<32> ackCnt;
                     bit<32> retransmitCnt;
                     bit<32> pktsCached;
                     bit<32> dropCount;
 
-                    // read the latest seqNo
-                    seq_no_reg_raw(hash_result, 0, 0, REG_READ, latestSeqNo);
+                    // // read the latest seqNo
+                    // seq_no_reg_raw(hash_result, 0, 0, REG_READ, latestSeqNo);
 
-                    if (p.tcp.ackNo > latestSeqNo) {
+                    if (p.tcp.ackNo > latestSeqNo) {                       
                         // this ACK number is more than latestSeqNo -- update, drop all cached pkts and reset counters
-                        if (count % 2 == 1) { // ODD 
+                        // if ((count & 32w1) == 1) { // ODD 
+                        if (true) {
                             pkts_cached_cnt_odd_reg_raw(hash_result, 0, 0, REG_READ, dropCount);
 
                             // drop cached pkts
                             cache_drop(sume_metadata.src_port,dropCount);
 
-                            // reset counters
-                            ack_cnt_reg_raw(hash_result, 0, 0, REG_WRITE, ackCnt);
-                            retransmit_cnt_reg_raw(hash_result, 0, 0, REG_WRITE, retransmitCnt);
-                            pkts_cached_cnt_even_reg_raw(hash_result, 0, 0, REG_WRITE, dropCount);
+                            // // reset counters
+                            // ack_cnt_reg_raw(hash_result, 0, 0, REG_WRITE, ackCnt);
+                            // retransmit_cnt_reg_raw(hash_result, 0, 0, REG_WRITE, retransmitCnt);
+                            // pkts_cached_cnt_even_reg_raw(hash_result, 0, 0, REG_WRITE, dropCount);
 
                         } else {
                             pkts_cached_cnt_odd_reg_raw(hash_result, 0, 0, REG_READ, dropCount);
@@ -407,35 +423,31 @@ control TopPipe(inout Parsed_packet p,
                     //             retransmit_cnt_reg_raw(hash_result, 0, 0, REG_WRITE, retransmitCnt);
                     //         }
                     //     }
-                    } 
-                           
-                // } else { 
-                //     // not an ACK packet
-                //     // metadata for register access
-                //     bit<32> latestSeqNo;
-                //     bit<32> earliestSeqNo;
-                //     bit<32> pkts_cached; 
+                    }                           
+                } else { 
+                    // not an ACK packet
+                    // metadata for register access
+                    bit<32> latestSeqNo;
+                    bit<32> earliestSeqNo;
+                    bit<32> pkts_cached;
+                    bit<1> true_;
 
-                //     // initialise the earliestSeqNo if it has not been init
-                //     earliest_seq_no_reg_raw(hash_result, 0, 0, REG_READ, earliestSeqNo);
-                //     if (earliestSeqNo == 0) {
-                //         earliest_seq_no_reg_raw(hash_result, p.tcp.seqNo, 0, REG_WRITE, earliestSeqNo);
-                //     } 
+                    // // initialise the earliestSeqNo if it has not been init
+                    // earliest_seq_no_reg_raw(hash_result, 0, 0, REG_READ, earliestSeqNo);
+                    // if (earliestSeqNo == 0) {
+                    //     earliest_seq_no_reg_raw(hash_result, p.tcp.seqNo, 0, REG_WRITE, earliestSeqNo);
+                    // } 
 
-                //     // read the latest seqNo
-                //     seq_no_reg_raw(hash_result, 0, 0, REG_READ, latestSeqNo);
+                    // read the latest seqNo -- if p.tcp.seqNo > latestSeqNo, overwrite reg[index] with p.tcp.seqNo
+                    seq_no_reg_praw(hash_result, p.tcp.seqNo, 0, REG_WRITE, p.tcp.seqNo, GT_RELOP, latestSeqNo, true_);
 
-                //     if (p.tcp.seqNo > latestSeqNo) {
-                //         // new package -- add pkt to cache_queue
-                //         cache_write(sume_metadata.dst_port);
+                    if (true_ == 1) { // if (p.tcp.seqNo > latestSeqNo)
+                        // new package -- add pkt to cache_queue
+                        cache_write(sume_metadata.dst_port);
 
-                //         // increment pkts_cached register
-                //         pkts_cached_cnt_reg_raw(hash_result, 0, 1, REG_ADD, pkts_cached);
-
-                //         // update latest seqNo
-                //         seq_no_reg_raw(hash_result, p.tcp.seqNo, 0, REG_WRITE, latestSeqNo);
-                //     } // else it's an old pkt that we have already cached -- do nothing
-                // } 
+                        // increment pkts_cached register
+                        // pkts_cached_cnt_reg_raw(hash_result, 0, 1, REG_ADD, pkts_cached);
+                    } // else it's an old pkt that we have already cached -- do nothing
                 }
             }
         }

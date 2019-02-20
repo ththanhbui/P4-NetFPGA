@@ -1,5 +1,5 @@
-//
-// Copyright (c) 2017 Stephen Ibanez
+//-
+// Copyright (c) 2015 Noa Zilberman
 // All rights reserved.
 //
 // This software was developed by Stanford University and the University of Cambridge Computer Laboratory 
@@ -7,6 +7,18 @@
 // the University of Cambridge Computer Laboratory under EPSRC INTERNET Project EP/H040536/1 and
 // by the University of Cambridge Computer Laboratory under DARPA/AFRL contract FA8750-11-C-0249 ("MRC2"), 
 // as part of the DARPA MRC research programme.
+//
+//  File:
+//        axi_clocking.v
+//
+//  Module:
+//        axi_clocking
+//
+//  Author: Noa Zilberman
+//
+//  Description:
+//        Sharable clocking resources for NetFPGA SUME
+//
 //
 // @NETFPGA_LICENSE_HEADER_START@
 //
@@ -27,10 +39,41 @@
 // @NETFPGA_LICENSE_HEADER_END@
 //
 
-table_cam_add_entry forward set_output_port 11:11:11:11:11:11 => 0b00000001
-table_cam_add_entry forward set_output_port 08:22:22:22:22:08 => 0b00000100
-table_cam_add_entry forward set_output_port 08:33:33:33:33:08 => 0b00010000
-table_cam_add_entry forward set_output_port 08:44:44:44:44:08 => 0b01000000
-table_cam_add_entry forward set_output_port ff:ff:ff:ff:ff:ff => 0b01010101
+`timescale 1ps / 1ps
+(* dont_touch = "yes" *)
+module axi_clocking
+  (
+   // Inputs
+   input clk_in_p,
+   input clk_in_n,
+   input resetn,
+   // Status outputs
+   
+   // IBUFDS 200MHz  
+   output locked,  
+   output clk_200 
+   
+   );
 
-table_cam_add_entry retransmit NoAction 00001010000000000000000000000001000010100000000000000000000000100000011000000000001101110000000001001000 => 0
+  // Signal declarations
+  wire s_axi_dcm_aclk0;
+  wire clkfbout;
+
+  // 200MHz differencial into single-rail     
+  IBUFDS clkin1_buf
+   (.O  (clkin1),
+    .I  (clk_in_p),
+    .IB (clk_in_n)
+    );
+
+
+clk_wiz_ip clk_wiz_i
+   (
+   // Clock in ports
+    .clk_in1(clkin1),      // input clk_in1
+    // Clock out ports
+    .clk_out1(clk_200),     // output clk_out1
+    // Status and control signals
+    .resetn(resetn), // input resetn
+    .locked(locked));
+endmodule

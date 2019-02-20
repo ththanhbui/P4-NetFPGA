@@ -272,6 +272,7 @@ control TopPipe(inout Parsed_packet p,
             bit<32> result; 
             if (true) {
                 dist_reg_raw(index, newVal, incVal, opCode, result);
+                byte_cnt_reg_raw(hash_result, newVal, incVal, opCode, numBytes);
             } else {
                 dist_reg_raw(index, newVal, incVal, opCode, result); 
             }

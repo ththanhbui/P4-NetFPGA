@@ -52,23 +52,19 @@ typedef bit<32> IPv4Addr_t;
 #define FIN_MASK 8w0b0000_0001
 #define FIN_POS 0
 
-#define ACK_MASK 8w0b0001_0000
-#define ACK_POS 4
+
+// define histogram bin boundaries
+#define LEVEL_1   16000
+#define LEVEL_2   32000
+#define LEVEL_3   48000
+#define LEVEL_4   64000
+#define LEVEL_5   80000
+#define LEVEL_6   96000
+#define LEVEL_7   112000 
 
 #define REG_READ   8w0
 #define REG_WRITE  8w1
 #define REG_ADD    8w2
-
-#define HASH_WIDTH 5
-
-#define PKT_SIZE 128
-
-#define UNUSED 8w0b0000_0000
-#define PADDING_80 48w0
-#define nf0 8w0b0000_0001
-#define nf1 8w0b0000_0100
-#define nf2 8w0b0001_0000
-#define nf3 8w0b0100_0000
 
 
 #define HASH_WIDTH 5
@@ -77,51 +73,6 @@ typedef bit<32> IPv4Addr_t;
 @Xilinx_ControlWidth(0)
 extern void hash_lrc(in bit<104> in_data, out bit<HASH_WIDTH> result);
 
-// latest_seq_no register (per flow)
-@Xilinx_MaxLatency(64)
-@Xilinx_ControlWidth(HASH_WIDTH)
-extern void seq_no_reg_raw(in bit<HASH_WIDTH> index,
-                             in bit<32> newVal,
-                             in bit<32> incVal,
-                             in bit<8> opCode,
-                             out bit<32> result);
-
-// earliest_seq_no register (per flow)
-@Xilinx_MaxLatency(64)
-@Xilinx_ControlWidth(HASH_WIDTH)
-extern void earliest_seq_no_reg_raw(in bit<HASH_WIDTH> index,
-                             in bit<32> newVal,
-                             in bit<32> incVal,
-                             in bit<8> opCode,
-                             out bit<32> result);                            
-
-// pkts_cached_cnt (per flow)
-@Xilinx_MaxLatency(64)
-@Xilinx_ControlWidth(HASH_WIDTH)
-extern void pkts_cached_cnt_reg_raw(in bit<HASH_WIDTH> index,
-                             in bit<32> newVal,
-                             in bit<32> incVal,
-                             in bit<8> opCode,
-                             out bit<32> result);                         
-
-
-// ack_cnt register
-@Xilinx_MaxLatency(64)
-@Xilinx_ControlWidth(HASH_WIDTH)
-extern void ack_cnt_reg_raw(in bit<HASH_WIDTH> index,
-                         in bit<32> newVal,
-                         in bit<32> incVal,
-                         in bit<8> opCode,
-                         out bit<32> result);
-
-// retransmit_cnt register
-@Xilinx_MaxLatency(64)
-@Xilinx_ControlWidth(HASH_WIDTH)
-extern void retransmit_cnt_reg_raw(in bit<HASH_WIDTH> index,
-                         in bit<32> newVal,
-                         in bit<32> incVal,
-                         in bit<8> opCode,
-                         out bit<32> result);     
 // byte_cnt register
 @Xilinx_MaxLatency(64)
 @Xilinx_ControlWidth(HASH_WIDTH)
@@ -191,11 +142,9 @@ struct user_metadata_t {
     bit<8>  unused;
 }
 
-// digest data to be sent to CPU if desired. MUST be 256 bits!
+// digest data to send to cpu if desired. MUST be 256 bits!
 struct digest_data_t {
-    bit<72>  unused;
-    bit<104> flow_id;
-    bit<80> tuser;
+    bit<256>  unused;
 }
 
 // Parser Implementation
@@ -209,8 +158,6 @@ parser TopParser(packet_in b,
         b.extract(p.ethernet);
         user_metadata.unused = 0;
         digest_data.unused = 0;
-        digest_data.flow_id = 0;
-        digest_data.tuser = 0;
         transition select(p.ethernet.etherType) {
             IPV4_TYPE: parse_ipv4;
             default: reject;
@@ -241,66 +188,15 @@ control TopPipe(inout Parsed_packet p,
         sume_metadata.dst_port = port;
     }
 
-    action cache_write(port_t port) {
-        bit<8> cache_port; 
-        cache_port = (port & 1) |
-                     (((port >> 2) & 1) << 1) |
-                     (((port >> 4) & 1) << 2) |
-                     (((port >> 6) & 1) << 3) |
-                     (( ((port >> 1) & 1) | ((port >> 3) & 1) | ((port >> 5) & 1) | ((port >> 7) & 1) ) << 4);
-        digest_data.tuser = PADDING_80++UNUSED++UNUSED++UNUSED++cache_port;
-    }
-
-    action cache_read(port_t port) {
-        bit<8> cache_port;
-        cache_port = (port & 1) |
-                     (((port >> 2) & 1) << 1) |
-                     (((port >> 4) & 1) << 2) |
-                     (((port >> 6) & 1) << 3) |
-                     (( ((port >> 1) & 1) | ((port >> 3) & 1) | ((port >> 5) & 1) | ((port >> 7) & 1) ) << 4);
-        digest_data.tuser = PADDING_80++8w1++UNUSED++cache_port++UNUSED;
-    }
-
-    action cache_drop(port_t port, bit<32> drop_count) {
-        bit<8> cache_port;
-        cache_port = (port & 1) |
-                     (((port >> 2) & 1) << 1) |
-                     (((port >> 4) & 1) << 2) |
-                     (((port >> 6) & 1) << 3) |
-                     (( ((port >> 1) & 1) | ((port >> 3) & 1) | ((port >> 5) & 1) | ((port >> 7) & 1) ) << 4);
-        digest_data.tuser = 24w0++drop_count++cache_port++UNUSED++UNUSED;
-    }
-
-    action nop() {}
-
-    action compute_flow_id(bit<1> i) {
-        if (i == 1) { // is an ACK
-            digest_data.flow_id = p.ip.dstAddr++p.ip.srcAddr++p.ip.protocol++p.tcp.dstPort++p.tcp.srcPort;
-        } else { // 'send' direction
-            digest_data.flow_id = p.ip.srcAddr++p.ip.dstAddr++p.ip.protocol++p.tcp.srcPort++p.tcp.dstPort;
-        }
-    }
-
-    table retransmit {
-        key = { digest_data.flow_id: exact; }
-
-        actions = {
-            set_output_port;
-            nop;
-        }
-        size = 64;
-        default_action = nop;
-    }
-
     table forward {
         key = { p.ethernet.dstAddr: exact; }
 
         actions = {
             set_output_port;
-            nop;
+            NoAction;
         }
         size = 64;
-        default_action = nop;
+        default_action = NoAction;
     }
 
     apply {
@@ -308,7 +204,75 @@ control TopPipe(inout Parsed_packet p,
             sume_metadata.drop = 1;
         }
 
-        
+        if (p.tcp.isValid()) { 
+
+            // metadata for byte_cnt register access
+            bit<HASH_WIDTH> hash_result;
+            bit<32> newVal;
+            bit<32> incVal;
+            bit<8> opCode;
+
+            // compute hash of 5-tuple to obtain index for byte_cnt register
+            hash_lrc(p.ip.srcAddr++p.ip.dstAddr++p.ip.protocol++p.tcp.srcPort++p.tcp.dstPort, hash_result); 
+            
+            // TODO: set newVal, incVal, and opCode appropriately based on
+            // whether this is a SYN packet 
+            if ((p.tcp.flags & SYN_MASK) >> SYN_POS == 1) {
+                // Is a SYN packet
+                newVal = 0; // reset the pkt_cnt state for this entry
+                incVal = 0; // unused
+                opCode = REG_WRITE;
+            } else {
+                // Is not a SYN packet
+                newVal = 0; // unused
+                incVal = 16w0++sume_metadata.pkt_len - 32w54; // count TCP payload bytes for this connection
+                opCode = REG_ADD;
+            }
+           
+            // access the byte_cnt register 
+            bit<32> numBytes;
+            byte_cnt_reg_raw(hash_result, newVal, incVal, opCode, numBytes);
+
+            bit<3> index;
+
+            // TODO: set index, newVal, incVal, and opCode appropriately
+            // based on whether or not this is a FIN packet
+            if((p.tcp.flags & FIN_MASK) >> FIN_POS == 1) {
+                // FIN bit is set 
+                newVal = 0; // unused
+                incVal = 1; // increment one of the buckets
+                opCode = REG_ADD;
+  
+                if (numBytes <= LEVEL_1) {
+                    index = 0;
+                } else if (LEVEL_1 < numBytes && numBytes <= LEVEL_2) {
+                    index = 1;
+                } else if (LEVEL_2 < numBytes && numBytes <= LEVEL_3) {
+                    index = 2;
+                } else if (LEVEL_3 < numBytes && numBytes <= LEVEL_4) {
+                    index = 3;
+                } else if (LEVEL_4 < numBytes && numBytes <= LEVEL_5) {
+                    index = 4;
+                } else if (LEVEL_5 < numBytes && numBytes <= LEVEL_6) {
+                    index = 5;
+                } else if (LEVEL_6 < numBytes && numBytes <= LEVEL_7) {
+                    index = 6; 
+                } else {
+                    index = 7;
+                }
+            }
+            else {
+                index = 0;
+                newVal = 0; // unused
+                incVal = 0; // unused
+                opCode = REG_READ;
+            }
+ 
+            // access the distribution register 
+            bit<32> result; 
+            dist_reg_raw(index, newVal, incVal, opCode, result);
+
+        }
 
     }
 }
