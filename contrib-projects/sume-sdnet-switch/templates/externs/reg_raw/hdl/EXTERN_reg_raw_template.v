@@ -48,6 +48,7 @@
 `define READ_OP    8'd0
 `define WRITE_OP   8'd1
 `define ADD_OP     8'd2
+`define SUB_OP     8'd3
 
 `include "@PREFIX_NAME@_cpu_regs_defines.v"
 module @MODULE_NAME@ 
@@ -369,10 +370,10 @@ module @MODULE_NAME@
                           d_addr_in_bram = index_fifo;
                           d_addr_in_bram_r_next = index_fifo;
                           d_data_in_bram = newVal_fifo;
-                          result_r_next = newVal_fifo;
-                          d_state_next = WRITE_RESULT;
+                        //   result_r_next = newVal_fifo;
+                          d_state_next = WAIT_BRAM;
                       end
-                      else if (opCode_fifo == `ADD_OP) begin
+                      else if ((opCode_fifo == `ADD_OP) || (opCode_fifo == `SUB_OP))  begin
                           d_addr_in_bram = index_fifo;
                           d_addr_in_bram_r_next = index_fifo;
                           index_fifo_r_next = index_fifo;
@@ -396,7 +397,7 @@ module @MODULE_NAME@
           WAIT_BRAM: begin
               if (cycle_cnt == 1'b1) begin // 2 cycle BRAM read latency
                   cycle_cnt_next = 0;
-                  if (opCode_fifo_r == `READ_OP) begin
+                  if ((opCode_fifo_r == `READ_OP) || (opCode_fifo_r == `WRITE_OP)) begin
                       result_r_next = d_data_out_bram;
                   end
                   else if (opCode_fifo_r == `ADD_OP) begin
@@ -404,7 +405,14 @@ module @MODULE_NAME@
                       d_addr_in_bram = index_fifo_r;
                       d_addr_in_bram_r_next = index_fifo_r;
                       d_data_in_bram = d_data_out_bram + incVal_fifo_r;
-                      result_r_next = d_data_out_bram + incVal_fifo_r;
+                      result_r_next = d_data_out_bram;
+                  end
+                  else if (opCode_fifo_r == `SUB_OP) begin
+                      d_we_bram = 1;
+                      d_addr_in_bram = index_fifo_r;
+                      d_addr_in_bram_r_next = index_fifo_r;
+                      d_data_in_bram = d_data_out_bram - incVal_fifo_r;
+                      result_r_next = d_data_out_bram;
                   end
                   else begin
                           $display("ERROR: d_state = WAIT_BRAM, unsupported opCode: %0d\n", opCode_fifo);

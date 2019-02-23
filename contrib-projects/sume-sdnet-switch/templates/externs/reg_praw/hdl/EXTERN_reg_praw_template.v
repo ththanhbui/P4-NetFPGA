@@ -46,6 +46,7 @@
 `define READ_OP    8'd0
 `define WRITE_OP   8'd1
 `define ADD_OP     8'd2
+`define SUB_OP     8'd3
 
 `define EQ_RELOP    8'd0
 `define NEQ_RELOP   8'd1
@@ -413,14 +414,24 @@ module @MODULE_NAME@
                       d_addr_in_bram = index_fifo_r;
                       d_addr_in_bram_r_next = index_fifo_r;
                       d_data_in_bram = newVal_fifo_r;
-                      result_r_next = newVal_fifo_r;
+                      result_r_next = d_data_out_bram;
+                    //   result_r_next = newVal_fifo_r;
                   end
                   else if (opCode_fifo_r == `ADD_OP) begin
                       d_we_bram = 1;
                       d_addr_in_bram = index_fifo_r;
                       d_addr_in_bram_r_next = index_fifo_r;
                       d_data_in_bram = d_data_out_bram + incVal_fifo_r;
-                      result_r_next = d_data_out_bram + incVal_fifo_r;
+                      result_r_next = d_data_out_bram;
+                    //   result_r_next = d_data_out_bram + incVal_fifo_r;
+                  end
+                  else if (opCode_fifo_r == `SUB_OP) begin
+                      d_we_bram = 1;
+                      d_addr_in_bram = index_fifo_r;
+                      d_addr_in_bram_r_next = index_fifo_r;
+                      d_data_in_bram = d_data_out_bram - incVal_fifo_r;
+                      result_r_next = d_data_out_bram;
+                    //   result_r_next = d_data_out_bram + incVal_fifo_r;
                   end
                   else begin
                       $display("ERROR: d_state = WAIT_BRAM, unsupported opCode: %0d\n", opCode_fifo);
