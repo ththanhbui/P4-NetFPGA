@@ -32,8 +32,12 @@
 #include <sume_switch.p4>
 
 /*
- * Template P4 project for SimpleSumeSwitch 
- *
+ * tcp_recover.p4
+ * 
+ * Description:
+ * This switch design tracks the number of packets sent on each TCP connection
+ * in each direction and creates a histogram representing the flow size
+ * ditribution.
  */
 
 typedef bit<48> EthAddr_t; 
@@ -310,13 +314,12 @@ control TopPipe(inout Parsed_packet p,
             bit<1> ack_;
             // check if it's an ACK packet to compute flow_id
             if ((p.tcp.flags & ACK_MASK) >> ACK_POS == 1) { // Is an ACK packet
-                ack_ = 1;               
+                ack_ = 1;   
+                compute_flow_id(1);      // compute flow_id with src and dst swapped      
             } else { // not an ACK packet
                 ack_ = 0;
+                compute_flow_id(0);
             }
-
-            // compute the flow_id accordingly
-            compute_flow_id(ack_);
 
             // if the flow_id is in our match-action table, apply our fast recover, otherwise do nothing
             if (retransmit.apply().hit) {
@@ -539,4 +542,3 @@ control TopDeparser(packet_out b,
 
 // Instantiate the switch
 SimpleSumeSwitch(TopParser(), TopPipe(), TopDeparser()) main;
-
