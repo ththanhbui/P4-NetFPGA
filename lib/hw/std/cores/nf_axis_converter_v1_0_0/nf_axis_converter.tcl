@@ -1,5 +1,6 @@
 #
 # Copyright (c) 2015 Noa Zilberman
+# Copyright (c) 2018 Stephen Ibanez
 # All rights reserved.
 #
 # This software was developed by
@@ -54,6 +55,7 @@ puts "Creating AXIS Converter IP"
 
 update_ip_catalog
 
+read_verilog "./hdl/nf_axis_converter_main.v"
 read_verilog "./hdl/nf_axis_converter.v"
 update_compile_order -fileset sources_1
 
@@ -72,6 +74,10 @@ set_property description ${design} [ipx::current_core]
 
 ipx::add_subcore NetFPGA:NetFPGA:fallthrough_small_fifo:1.00 [ipx::get_file_groups xilinx_anylanguagesynthesis -of_objects [ipx::current_core]]
 ipx::add_subcore NetFPGA:NetFPGA:fallthrough_small_fifo:1.00 [ipx::get_file_groups xilinx_anylanguagebehavioralsimulation -of_objects [ipx::current_core]]
+ipx::infer_user_parameters [ipx::current_core]
+
+ipx::add_subcore NetFPGA:NetFPGA:axis_fifo:1.00 [ipx::get_file_groups xilinx_anylanguagesynthesis -of_objects [ipx::current_core]]
+ipx::add_subcore NetFPGA:NetFPGA:axis_fifo:1.00 [ipx::get_file_groups xilinx_anylanguagebehavioralsimulation -of_objects [ipx::current_core]]
 ipx::infer_user_parameters [ipx::current_core]
 
 ipx::add_user_parameter {C_M_AXIS_DATA_WIDTH} [ipx::current_core]
@@ -140,14 +146,4 @@ update_ip_catalog
 close_project
 
 file delete -force ${proj_dir} 
-
-
-
-
-
-
-
-
-
-
 

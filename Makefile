@@ -74,6 +74,7 @@ clean: libclean toolsclean projectsclean hwtestlibclean swclean
 sume:
 	make -C $(LIB_HW_DIR)/contrib/cores/nf_endianess_manager_v1_0_0/
 	make -C $(LIB_HW_DIR)/std/cores/fallthrough_small_fifo_v1_0_0/
+	make -C $(LIB_HW_DIR)/std/cores/axis_fifo_v1_0_0/
 	make -C $(LIB_HW_DIR)/std/cores/input_arbiter_v1_0_0/
 	make -C $(LIB_HW_DIR)/std/cores/output_queues_v1_0_0/
 	#make -C $(LIB_HW_DIR)/std/cores/router_output_port_lookup_v1_0_0/
