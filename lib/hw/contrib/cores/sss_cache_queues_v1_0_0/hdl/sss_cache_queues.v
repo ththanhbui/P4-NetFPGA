@@ -228,7 +228,7 @@ module sss_cache_queues
     */
 
     // SI
-   	localparam DROP_POS = 32; 
+	localparam DROP_POS = 32; 
 	(* mark_debug = "true" *) wire should_drop = s_axis_tuser[DROP_POS]; 
 
     reg [NUM_QUEUES-1:0]                nearly_full;

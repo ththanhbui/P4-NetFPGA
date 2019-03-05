@@ -431,7 +431,7 @@ module @MODULE_NAME@
                       d_addr_in_bram_r_next = index_fifo_r;
                       d_data_in_bram = d_data_out_bram - incVal_fifo_r;
                       result_r_next = d_data_out_bram;
-                    //   result_r_next = d_data_out_bram + incVal_fifo_r;
+                    //   result_r_next = d_data_out_bram - incVal_fifo_r;
                   end
                   else begin
                       $display("ERROR: d_state = WAIT_BRAM, unsupported opCode: %0d\n", opCode_fifo);

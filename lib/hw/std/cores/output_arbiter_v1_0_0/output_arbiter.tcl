@@ -63,7 +63,7 @@ ipx::package_project
 set_property name ${design} [ipx::current_core]
 set_property library ${lib_name} [ipx::current_core]
 set_property vendor_display_name {NetFPGA} [ipx::current_core]
-set_property company_url {www.netfpga.org} [ipx::current_core]
+set_property company_url {http://www.netfpga.org} [ipx::current_core]
 set_property vendor {NetFPGA} [ipx::current_core]
 set_property supported_families {{virtex7} {Production}} [ipx::current_core]
 set_property taxonomy {{/NetFPGA/Generic}} [ipx::current_core]
@@ -128,9 +128,9 @@ set_property value_format {bitstring} [ipx::get_user_parameter C_BASEADDR [ipx::
 ipx::add_bus_parameter FREQ_HZ [ipx::get_bus_interfaces m_axis -of_objects [ipx::current_core]]
 ipx::add_bus_parameter FREQ_HZ [ipx::get_bus_interfaces s_axis_0 -of_objects [ipx::current_core]]
 ipx::add_bus_parameter FREQ_HZ [ipx::get_bus_interfaces s_axis_1 -of_objects [ipx::current_core]]
-ipx::add_bus_parameter FREQ_HZ [ipx::get_bus_interfaces s_axis_2 -of_objects [ipx::current_core]]
-ipx::add_bus_parameter FREQ_HZ [ipx::get_bus_interfaces s_axis_3 -of_objects [ipx::current_core]]
-ipx::add_bus_parameter FREQ_HZ [ipx::get_bus_interfaces s_axis_4 -of_objects [ipx::current_core]]
+# ipx::add_bus_parameter FREQ_HZ [ipx::get_bus_interfaces s_axis_2 -of_objects [ipx::current_core]]
+# ipx::add_bus_parameter FREQ_HZ [ipx::get_bus_interfaces s_axis_3 -of_objects [ipx::current_core]]
+# ipx::add_bus_parameter FREQ_HZ [ipx::get_bus_interfaces s_axis_4 -of_objects [ipx::current_core]]
 
 ipx::infer_user_parameters [ipx::current_core]
             

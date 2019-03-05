@@ -30,8 +30,7 @@
 
 export P4_PROJECT_NAME=tcp_recover
 export NF_PROJECT_NAME=simple_sume_switch
-# export SUME_FOLDER=${HOME}/part-ii-proj/P4-NetFPGA # local machine
-export SUME_FOLDER=${HOME}/home/ico/Projects/part-ii-proj/P4-NetFPGA # nf-test209
+export SUME_FOLDER=${HOME}/part-ii-proj/P4-NetFPGA
 export SUME_SDNET=${SUME_FOLDER}/contrib-projects/sume-sdnet-switch
 export P4_PROJECT_DIR=${SUME_SDNET}/projects/${P4_PROJECT_NAME}
 export LD_LIBRARY_PATH=${SUME_SDNET}/sw/sume:${LD_LIBRARY_PATH}
