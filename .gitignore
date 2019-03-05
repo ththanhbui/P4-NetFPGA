@@ -12,6 +12,9 @@ rom_data.txt
 xgui/
 ip_proj/
 
+.vscode/*
+p4.code-workspace
+
 lib/hw/contrib/cores/nf_sume_sdnet_ip/
 lib/hw/xilinx/cores/cam_v1_1_0/xapp1151_Param_CAM.zip
 lib/hw/xilinx/cores/cam_v1_1_0/xapp1151_cam_v1_1/
