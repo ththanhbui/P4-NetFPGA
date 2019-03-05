@@ -142,7 +142,7 @@ struct user_metadata_t {
     bit<8>  unused;
 }
 
-// digest data to send to cpu if desired. MUST be 256 bits!
+// digest data, MUST be 256 bits
 struct digest_data_t {
     bit<256>  unused;
 }
@@ -219,14 +219,12 @@ control TopPipe(inout Parsed_packet p,
             // whether this is a SYN packet 
             if ((p.tcp.flags & SYN_MASK) >> SYN_POS == 1) {
                 // Is a SYN packet
-                newVal = 0; // reset the pkt_cnt state for this entry
-                incVal = 0; // unused
-                opCode = REG_WRITE;
+
             } else {
                 // Is not a SYN packet
-                newVal = 0; // unused
+
                 incVal = 16w0++sume_metadata.pkt_len - 32w54; // count TCP payload bytes for this connection
-                opCode = REG_ADD;
+
             }
            
             // access the byte_cnt register 
@@ -239,42 +237,36 @@ control TopPipe(inout Parsed_packet p,
             // based on whether or not this is a FIN packet
             if((p.tcp.flags & FIN_MASK) >> FIN_POS == 1) {
                 // FIN bit is set 
-                newVal = 0; // unused
-                incVal = 1; // increment one of the buckets
-                opCode = REG_ADD;
-  
+
+
+ 
                 if (numBytes <= LEVEL_1) {
-                    index = 0;
+
                 } else if (LEVEL_1 < numBytes && numBytes <= LEVEL_2) {
-                    index = 1;
+
                 } else if (LEVEL_2 < numBytes && numBytes <= LEVEL_3) {
-                    index = 2;
+
                 } else if (LEVEL_3 < numBytes && numBytes <= LEVEL_4) {
-                    index = 3;
+
                 } else if (LEVEL_4 < numBytes && numBytes <= LEVEL_5) {
-                    index = 4;
+
                 } else if (LEVEL_5 < numBytes && numBytes <= LEVEL_6) {
-                    index = 5;
+
                 } else if (LEVEL_6 < numBytes && numBytes <= LEVEL_7) {
-                    index = 6; 
+
                 } else {
-                    index = 7;
+
                 }
             }
             else {
-                index = 0;
-                newVal = 0; // unused
-                incVal = 0; // unused
-                opCode = REG_READ;
+                // FIN bit is not set
+
             }
  
             // access the distribution register 
             bit<32> result; 
-            if (true) {
-                dist_reg_raw(index, newVal, incVal, opCode, result);
-            } else {
-                dist_reg_raw(index, newVal, incVal, opCode, result); 
-            }
+            dist_reg_raw(index, newVal, incVal, opCode, result);
+
         }
 
     }
@@ -297,4 +289,3 @@ control TopDeparser(packet_out b,
 
 // Instantiate the switch
 SimpleSumeSwitch(TopParser(), TopPipe(), TopDeparser()) main;
-

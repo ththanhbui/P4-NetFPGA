@@ -52,14 +52,18 @@ tuple_expect_file = "Tuple_expect.txt"
 
 dig_field_len = collections.OrderedDict()
 dig_field_len['unused'] = 72
-dig_field_len['flow_id'] = 104
-dig_field_len['tuser'] = 80
+dig_field_len['flow_id'] = 104  # p.ip.srcAddr++p.ip.dstAddr++p.ip.protocol++p.tcp.srcPort++p.tcp.dstPort
+dig_field_len['tuser'] = 80     # [7:0]    cache_write; // encoded:  {0, 0, 0, DMA, NF3, NF2, NF1, NF0}
+                                # [15:8]   cache_read;  // encoded:  {0, 0, 0, DMA, NF3, NF2, NF1, NF0}
+                                # [23:16]  cache_drop;  // encoded:  {0, 0, 0, DMA, NF3, NF2, NF1, NF0}
+                                # [31:24]  cache_count; // number of packets to read or drop;
+                                # [79:32]  unused 
 
 #initialize tuple_expect
 dig_tuple_expect = collections.OrderedDict()
 dig_tuple_expect['unused'] = 0
 dig_tuple_expect['flow_id'] = 0
-dig_tuple_expect['tuser'] = 0
+dig_tuple_expect['tuser'] = 0 
  
 """
 Clear the tuple files

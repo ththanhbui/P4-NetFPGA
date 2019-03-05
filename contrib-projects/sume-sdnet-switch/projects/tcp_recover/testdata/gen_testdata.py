@@ -34,6 +34,7 @@ from nf_sim_tools import *
 import random
 from collections import OrderedDict
 import sss_sdnet_tuples
+from digest_data import *
 
 ###########
 # pkt generation tools
@@ -68,23 +69,22 @@ def applyPkt(pkt, ingress, time):
     pkt.time = time
     nf_applied[nf_id_map[ingress]].append(pkt)
 
-def expPkt(pkt, egress, drop):
+def expPkt(pkt, egress, drop, **kwargs):
     pktsExpected.append(pkt)
     sss_sdnet_tuples.sume_tuple_expect['dst_port'] = nf_port_map[egress]
     sss_sdnet_tuples.sume_tuple_expect['drop'] = drop 
-    sss_sdnet_tuples.dig_tuple_expect['flow_id'] = 792281630049477301766976897096
+    if 'flow_id' in kwargs:
+        sss_sdnet_tuples.dig_tuple_expect['flow_id'] = kwargs['flow_id'] # 792281630049477301766976897099
+    if 'tuser' in kwargs:
+        sss_sdnet_tuples.dig_tuple_expect['tuser'] = kwargs['tuser'] 
     sss_sdnet_tuples.write_tuples()
+
     if egress in ["nf0","nf1","nf2","nf3"] and drop == False:
         nf_expected[nf_id_map[egress]].append(pkt)
-        #nf_expected[nf_id_map[egress]].append(pkt)
     elif egress == 'bcast' and drop == False:
-        nf_expected[0].append(pkt)
-        nf_expected[0].append(pkt)
-        nf_expected[1].append(pkt)
-        nf_expected[1].append(pkt)
+        nf_expected[0].append(pkt) 
+        nf_expected[1].append(pkt)        
         nf_expected[2].append(pkt)
-        nf_expected[2].append(pkt)
-        nf_expected[3].append(pkt)
         nf_expected[3].append(pkt)
 
 def write_pcap_files():
@@ -100,15 +100,16 @@ def write_pcap_files():
             wrpcap('nf{0}_expected.pcap'.format(i), nf_expected[i])
 
     for i in nf_applied.keys():
-        print "nf{0}_applied times: ".format(i), [p.time for p in nf_applied[i]]
+        print ("nf{0}_applied times: ".format(i), [p.time for p in nf_applied[i]])
 
-#####################
-# generate testdata #
-#####################
-MAC1 = "11:11:11:11:11:11"
-MAC2 = "22:22:22:22:22:22"
+######################
+# Defining functions #
+###################### 
+
+MAC1 = "08:11:11:11:11:08" # --> nf0
+MAC2 = "08:22:22:22:22:08" # --> nf1
 sport = 55
-dport = 72
+dport = 75
 IP1_src = "10.0.0.1"
 IP1_dst = "10.0.0.2"
 IP2_src = "192.168.1.1"
@@ -117,16 +118,12 @@ IP3_src = "12.138.254.42"
 IP3_dst = "12.138.254.33"
 
 
-PKT_SIZE = 1000
-MIN_PKT_SIZE = 64
-HEADER_SIZE = 54 # size of TCP header
-
 # Create a single TCP flow using the given 5-tuple parameters of the given size
 def make_flow(srcIP, dstIP, sport, dport, flow_size):
     pkts = []
     # make the SYN PKT
     pkt = Ether(dst=MAC1, src=MAC2) / IP(src=srcIP, dst=dstIP) / TCP(sport=sport, dport=dport, flags='S')
-    pkt = pad_pkt(pkt, MIN_PKT_SIZE)
+    pkt = pad_pkt(pkt, PKT_SIZE)
     pkts.append(pkt)
     # make the data pkts
     size = flow_size
@@ -136,7 +133,7 @@ def make_flow(srcIP, dstIP, sport, dport, flow_size):
         pkts.append(pkt)
         size -= PKT_SIZE
     # make the FIN pkt
-    size = max(MIN_PKT_SIZE - HEADER_SIZE, size)
+    size = max(PKT_SIZE - HEADER_SIZE, size)
     pkt = Ether(dst=MAC1, src=MAC2) / IP(src=srcIP, dst=dstIP) / TCP(sport=sport, dport=dport, flags='F')
     pkt = pad_pkt(pkt, HEADER_SIZE + size)
     pkts.append(pkt)
@@ -156,28 +153,142 @@ def make_flow(srcIP, dstIP, sport, dport, flow_size):
 # trace = mix_flows([flow1, flow2, flow3])
 
 # # apply the trace
-i = 0
+# i = 0
 # drop = True
 # ingress = "nf0"
 # egress = "none"
 # for pkt in trace:
 #     applyPkt(pkt, ingress, i)
 #     i += 1
-#     expPkt(pkt, egress, drop)
-    
-
-# Final dummy pkt (not dropped) - used for barrier in SUME simulations
-drop = False
-# pkt = Ether(dst="08:11:11:11:11:08") / IP() 
-# pkt = pad_pkt(pkt, 64)
-pkt = Ether(dst=MAC1, src=MAC2) / IP(src=IP1_src, dst=IP1_dst) / TCP(sport=sport, dport=dport, flags='S')
-pkt = pad_pkt(pkt, MIN_PKT_SIZE)
-ingress = "nf0"
-applyPkt(pkt, ingress, i)
+#     expPkt(pkt, egress, drop) 
 
 
-egress = "nf0"
-expPkt(pkt, egress, drop)
-expPkt(pkt, egress, drop)
+#####################
+# Generate testdata #
+#####################
+
+PKT_SIZE = 1024
+HEADER_SIZE = 54 # size of headers
+initial_seq = random.randint(0,10)
+curr_seq = initial_seq
+pktCnt=0
+
+
+############################################
+# Test P4 program with different scenarios #
+############################################
+
+# Test 1: Basic packet forwarding of the SimpleSumeSwitch-architecture-based program
+# Goal: A packet coming through the SSS architecture will come out with the digest_data modified.
+# Description:
+#   - Send 1 packet from port 0 to port 1.
+#   - Expect 1 packet coming out of port 1 of the SSS with the digest_data.flow_id computed and matches the flow_id 
+#   of the original packet, and the digest_data.tuser set to write the packet to the cache queue of port 1
+
+pkt = Ether(src=MAC1, dst=MAC2) / IP(src=IP1_src, dst=IP1_dst) / TCP(sport=sport, dport=dport, seqflags='S', seq=curr_seq)
+pkt = pad_pkt(pkt, PKT_SIZE)
+applyPkt(pkt, "nf0", pktCnt)                                    # send from port 0
+pktCnt += 1
+
+flow_id = compute_tuple(IP1_src,IP1_dst,6,sport,dport)
+actions = compute_tuser(0,0,0,nf_port_map["nf1"])               # CACHE_WRITE to port 1
+expPkt(pkt, "nf1", drop=False, flow_id=flow_id, tuser=actions)
+
+
+############################################################################################################################
+
+# Test 2: Behaviour of the program when it receives a standard ACK packet.
+# Goal: When the program receives an ACK packet with an ACK Number that is the next byte expected (next Sequence Number), it 
+#   drops the packets that are currently cached in the cache queue.
+# Description:
+#   - Send 3 packets from port 0 to port 1.
+#   - Send 1 ACK packet `ack_pkt_1` acknowledged the receipt of the first packet.
+#   - Expect `ack_pkt_1` to come out of the program with its digest_data.tuser set to drop 1 packet from the cache queue of 
+#  port 0
+#   - Send 1 ACK packet `ack_pkt_all` acknowledged the receipt of the remaining two packets.
+#   - Expect `ack_pkt_all` to come out of the program with its digest_data.tuser set to drop all remaining packets from the 
+#  cache queue of port 0
+
+curr_seq += PKT_SIZE
+pkt1 = Ether(src=MAC1, dst=MAC2) / IP(src=IP1_src, dst=IP1_dst) / TCP(sport=sport, dport=dport, seq=curr_seq)
+pkt1 = pad_pkt(pkt, PKT_SIZE)
+applyPkt(pkt1, "nf0", pktCnt)
+pktCnt += 1
+actions = compute_tuser(0,0,0,nf_port_map["nf1"])          # CACHE_WRITE to port 1
+expPkt(pkt1, "nf1", drop=False, flow_id=flow_id, tuser=actions)
+
+curr_seq += PKT_SIZE
+pkt2 = Ether(src=MAC1, dst=MAC2) / IP(src=IP1_src, dst=IP1_dst) / TCP(sport=sport, dport=dport, seq=curr_seq)
+pkt2 = pad_pkt(pkt, PKT_SIZE)
+applyPkt(pkt2, "nf0", pktCnt)
+pktCnt += 1
+actions = compute_tuser(0,0,0,nf_port_map["nf1"])          # CACHE_WRITE to port 1
+expPkt(pkt2, "nf1", drop=False, flow_id=flow_id, tuser=actions)
+
+ack_pkt_1 = Ether(src=MAC2, dst=MAC1) / IP(src=IP1_dst, dst=IP1_src) / TCP(sport=dport, dport=sport, flags='A', 
+    ack=initial_seq + PKT_SIZE*1)                            # ACK-ing the first packet
+applyPkt(ack_pkt_1, "nf1", pktCnt)
+pktCnt += 1                        
+actions = compute_tuser(1,nf_port_map["nf1"],0,0)           # CACHE_DROP one cached packet from port 1
+expPkt(ack_pkt_1, "nf0", drop=False, flow_id=flow_id, tuser=actions) 
+
+
+ack_pkt_all = Ether(src=MAC2, dst=MAC1) / IP(src=IP1_dst, dst=IP1_src) / TCP(sport=dport, dport=sport, flags='A',
+    ack=initial_seq + PKT_SIZE*3)
+applyPkt(ack_pkt_all, "nf1", pktCnt)
+pktCnt += 1
+actions = compute_tuser(2,nf_port_map["nf1"],0,0)          # CACHE_DROP the remaining cached packets (2) from port 1           
+expPkt(ack_pkt_all, "nf0", drop=False, flow_id=flow_id, tuser=actions)
+
+
+############################################################################################################################
+
+# Test 3: Behaviour of the program when a DUP ACK packet is received
+# Goal: When there are DUP ACK packets received, the program assists the fast recovery mechanism: the third DUP ACK packet will 
+#   be sent to the source with ACK flag = 0, and the program will resend the packet with Sequence Number equals to the DUP ACK.
+# Description:
+#   - Send 1 packet from port 0 to port 1
+#   - Send 3 DUP ACK packets from port 1 to port 0
+#   - Expect the 3rd DUP ACK to be sent back to source:
+#      - with ACK flag set to 0
+#      - digest_data.tuser is set to signal the resending of packet with Sequence Number equals to the DUP ACK.
+
+curr_seq += PKT_SIZE
+pkt1 = Ether(src=MAC1, dst=MAC2) / IP(src=IP1_src, dst=IP1_dst) / TCP(sport=sport, dport=dport, seq=curr_seq)
+pkt1 = pad_pkt(pkt, PKT_SIZE)
+applyPkt(pkt1, "nf0", time=1)
+flow_id = compute_tuple(IP1_src,IP1_dst,6,sport,dport)
+actions = compute_tuser(0,0,0,nf_port_map["nf1"])          # CACHE_WRITE to port 1
+expPkt(pkt, "nf1", drop=False, flow_id=flow_id, tuser=actions)
+
+
+dup_ack = Ether(src=MAC2, dst=MAC1) / IP(src=IP1_dst, dst=IP1_src) / TCP(sport=dport, dport=sport, flags='A', 
+    ack=curr_seq)
+applyPkt(dup_ack, "nf1", pktCnt)                           # the first DUP ACK from port 1 to port 0
+pktCnt += 1
+applyPkt(dup_ack, "nf1", pktCnt)                           # the second DUP ACK from port 1 to port 0
+pktCnt += 1
+applyPkt(dup_ack, "nf1", pktCnt)                           # the third DUP ACK from port 1 to port 0 -- fast retransmit
+pktCnt += 1
+
+
+expPkt(dup_ack, "nf0", drop=False, flow_id=flow_id, tuser=actions)  # the first DUP ACK from port 1 to port 0   
+expPkt(dup_ack, "nf0", drop=False, flow_id=flow_id, tuser=actions)  # the second DUP ACK from port 1 to port 0
+
+# the third DUP ACK from port 1 to port 0 -- fast retransmit: packet sent back to host with ACK flag set to 0.
+dup_ack1 = Ether(src=MAC2, dst=MAC1) / IP(src=IP1_dst, dst=IP1_src) / TCP(sport=dport, dport=sport, ack=initial_seq+PKT_SIZE)
+actions = compute_tuser(0,0,nf_port_map["nf1"],0)                   # CACHE_READ the cached packet from port 1           
+expPkt(dup_ack1, "nf0", drop=False, flow_id=flow_id, tuser=actions)
+
+
+############################################################################################################################
+
+# Test 4: Behaviour of the program when there are multiple flows.
+# Goal: After caching  are multiple flows, the program only process those packets with the flow matches the specific flow_id(s)
+# that we are interested in, and have specified with our `retransmit` table in `commands.txt`.
+# # Description:
+#   - Create 3 flows and randomly interleave the flows' packets
+#   - Expect to see that the program will process the other two flows as per normal, while assisting the fast recovery process of our flow of interest.
+
+
 write_pcap_files()
-

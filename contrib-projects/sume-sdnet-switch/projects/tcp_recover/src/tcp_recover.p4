@@ -67,7 +67,7 @@ typedef bit<32> IPv4Addr_t;
 
 #define HASH_WIDTH 5
 
-#define PKT_SIZE 7 // pkt_size is 128 
+#define PKT_SIZE 10 // pkt_size is 1024 
 
 #define UNUSED 8w0b0000_0000
 #define PADDING_80 48w0
@@ -199,7 +199,12 @@ struct user_metadata_t {
 struct digest_data_t {
     bit<72>  unused;
     bit<104> flow_id;
-    bit<80> tuser;
+    bit<80> tuser;      /*  [7:0]    cache_write; // encoded:  {0, 0, 0, DMA, NF3, NF2, NF1, NF0}
+                         *  [15:8]   cache_read;  // encoded:  {0, 0, 0, DMA, NF3, NF2, NF1, NF0}
+                         *  [23:16]  cache_drop;  // encoded:  {0, 0, 0, DMA, NF3, NF2, NF1, NF0}
+                         *  [31:24]  cache_count; // number of packets to read or drop;
+                         *  [79:32]  unused 
+                         */
 }
 
 // Parser Implementation
@@ -308,217 +313,217 @@ control TopPipe(inout Parsed_packet p,
     apply {
         if (!forward.apply().hit) {
             sume_metadata.drop = 1;
-        }
-        
-        if (p.tcp.isValid()) {
-            bit<1> ack_;
-            // check if it's an ACK packet to compute flow_id
-            if ((p.tcp.flags & ACK_MASK) >> ACK_POS == 1) { // Is an ACK packet
-                ack_ = 1;   
-                compute_flow_id(1);      // compute flow_id with src and dst swapped      
-            } else { // not an ACK packet
-                ack_ = 0;
-                compute_flow_id(0);
-            }
-
-            // if the flow_id is in our match-action table, apply our fast recover, otherwise do nothing
-            if (retransmit.apply().hit) {
-                // metadata for index register access
-                bit<HASH_WIDTH> hash_result;
-                // compute hash of 5-tuple to obtain index for seq_no register 
-                hash_lrc(digest_data.flow_id, hash_result);
-
-                // read the latest seqNo -- access seq_no_reg_praw
-                // metadata for register access
-                bit<1> greater;
-                bit<32> latestSeqNo;
-                bit<32> seq_no_compVal;
-
-                if (ack_ == 1) { // Is an ACK packet
-                    seq_no_compVal = 0; // just want to read the latest seqNo
-                } else {
-                    seq_no_compVal = p.tcp.seqNo;
+        } else {
+            if (p.tcp.isValid()) {
+                bit<1> ack_;
+                // check if it's an ACK packet to compute flow_id
+                if ((p.tcp.flags & ACK_MASK) >> ACK_POS == 1) { // Is an ACK packet
+                    ack_ = 1;   
+                    compute_flow_id(1);      // compute flow_id with src and dst swapped      
+                } else { // not an ACK packet
+                    ack_ = 0;
+                    compute_flow_id(0);
                 }
-                
-                seq_no_reg_praw(hash_result, p.tcp.seqNo, 0, REG_WRITE, seq_no_compVal, GT_RELOP, latestSeqNo, greater);
-                /* if it is not an ACK & p.tcp.seqNo > latestSeqNo, overwrite reg[index] with p.tcp.seqNo
-                 *  --> greater is True
-                 *  --> greater is False if p.tcp.seqNo <= latestSeqNo -- we got an old packet
-                 * if it is an ACK, read the latest seqNo to latestSeqNo register
-                 *  --> greater is False because 0 is not greater than current value at seq_no[index]
-                 */
 
-                // access earliest_seq_no_reg_praw -- the earliest seqNo in our cache 
-                // metadata for register access
-                bit<1> use_earliest_seq_no = 0;
-                bit<32> earliest_newVal;
-                bit<32> earliest_compVal;
-                bit<8> earliest_relOp;
-                bit<32> earliest_result = 0;            // the earliest seqNo in our cache
-                bit<1> earliest_true;
+                // if the flow_id is in our match-action table, apply our fast recover, otherwise do nothing
+                if (retransmit.apply().hit) {
+                    // metadata for index register access
+                    bit<HASH_WIDTH> hash_result;
+                    // compute hash of 5-tuple to obtain index for seq_no register 
+                    hash_lrc(digest_data.flow_id, hash_result);
 
-                // access the pkts_cached_cnt_reg_raw -- the number of pkts cached
-                // metadata for register access
-                bit<1> use_pkts_cached_cnt = 0;
-                bit<32> pkts_cached_newVal = 0;
-                bit<32> pkts_cached_incVal = 0;
-                bit<8> pkts_cached_opCode = REG_READ;
-                bit<32> pkts_cached_result = 0;         // the number of pkts cached
+                    // read the latest seqNo -- access seq_no_reg_praw
+                    // metadata for register access
+                    bit<1> greater;
+                    bit<32> latestSeqNo;
+                    bit<32> seq_no_compVal;
 
-                // access the ack_cnt_reg_praw -- the number of time a DUP ACK is seen
-                bit<1> use_ack_cnt = 0;
-                bit<32> ack_cnt_newVal = 0;
-                bit<32> ack_cnt_incVal = 0;
-                bit<8> ack_cnt_opCode = REG_READ;
-                bit<32> ack_cnt_compVal = 0;
-                bit<8> ack_cnt_relOp = EQ_RELOP;
-                bit<32> ack_cnt_result;             // the ack_cnt
-                bit<1> ack_cnt_true = 1;
-
-                // access the retransmit_cnt_reg_ifElseRaw -- the number of time we retransmit
-                // metadata for register access
-                bit<1> use_retransmit_cnt = 0;
-                bit<32> retransmit_newVal_2 = 0;
-                bit<32> retransmit_incVal_2 = 0;
-                bit<8> retransmit_opCode_2 = REG_READ;
-                bit<32> retransmit_newVal_1 = 0;
-                bit<32> retransmit_incVal_1 = 0;
-                bit<8> retransmit_opCode_1 = REG_READ;
-                bit<32> retransmit_compVal = 0;
-                bit<8> retransmit_relOp = EQ_RELOP;
-                bit<32> retransmit_result;          //  the retransmit_cnt
-                bit<1> retransmit_boolean = 1;      //  default: don't retransmit -- retransmit_cnt = 1
-
-                if (ack_ == 0) {                      
-                    earliest_newVal = p.tcp.seqNo;
-                    if ((p.tcp.flags & SYN_MASK) >> SYN_POS == 1) {
-                        earliest_compVal = 0; // initialise the earliestSeqNo for the first packet
-                        earliest_relOp = EQ_RELOP;
+                    if (ack_ == 1) { // Is an ACK packet
+                        seq_no_compVal = 0; // just want to read the latest seqNo
                     } else {
-                        earliest_compVal = p.tcp.seqNo; // earliest_compVal = latest ACK received
-                                                        // --> only update if p.tcp.seqNo > latest ACK received
-                        earliest_relOp = GT_RELOP;
+                        seq_no_compVal = p.tcp.seqNo;
                     }
-                    use_earliest_seq_no = 1;
+                    
+                    seq_no_reg_praw(hash_result, p.tcp.seqNo, 0, REG_WRITE, seq_no_compVal, GT_RELOP, latestSeqNo, greater);
+                    /* if it is not an ACK & p.tcp.seqNo > latestSeqNo, overwrite reg[index] with p.tcp.seqNo
+                    *  --> greater is True
+                    *  --> greater is False if p.tcp.seqNo <= latestSeqNo -- we got an old packet
+                    * if it is an ACK, read the latest seqNo to latestSeqNo register
+                    *  --> greater is False because 0 is not greater than current value at seq_no[index]
+                    */
 
-                    if (greater == 1) {  // if (p.tcp.seqNo > latestSeqNo)
-                        //  new package -- add pkt to cache_queue
-                        cache_write(sume_metadata.dst_port);
+                    // access earliest_seq_no_reg_praw -- the earliest seqNo in our cache 
+                    // metadata for register access
+                    bit<1> use_earliest_seq_no = 0;
+                    bit<32> earliest_newVal;
+                    bit<32> earliest_compVal;
+                    bit<8> earliest_relOp;
+                    bit<32> earliest_result = 0;            // the earliest seqNo in our cache
+                    bit<1> earliest_true;
 
-                        //  increment pkts_cached register
-                        pkts_cached_incVal = 1;
-                        pkts_cached_opCode = REG_ADD;
-                        use_pkts_cached_cnt = 1;                
-                    } //  else it's an old pkt that we have already cached -- do nothing
-                } else { // ack_ == 1
-                    earliest_newVal = p.tcp.ackNo;
-                    earliest_compVal = 0;
-                    earliest_relOp = LT_RELOP; // always true -- 0 < current value
-                    use_earliest_seq_no = 1;
+                    // access the pkts_cached_cnt_reg_raw -- the number of pkts cached
+                    // metadata for register access
+                    bit<1> use_pkts_cached_cnt = 0;
+                    bit<32> pkts_cached_newVal = 0;
+                    bit<32> pkts_cached_incVal = 0;
+                    bit<8> pkts_cached_opCode = REG_READ;
+                    bit<32> pkts_cached_result = 0;         // the number of pkts cached
 
-                    ack_cnt_newVal = 0;
+                    // access the ack_cnt_reg_praw -- the number of time a DUP ACK is seen
+                    bit<1> use_ack_cnt = 0;
+                    bit<32> ack_cnt_newVal = 0;
+                    bit<32> ack_cnt_incVal = 0;
+                    bit<8> ack_cnt_opCode = REG_READ;
+                    bit<32> ack_cnt_compVal = 0;
+                    bit<8> ack_cnt_relOp = EQ_RELOP;
+                    bit<32> ack_cnt_result;             // the ack_cnt
+                    bit<1> ack_cnt_true = 1;
 
-                    if (p.tcp.ackNo > latestSeqNo) {
-                        pkts_cached_incVal = 0;
-                        pkts_cached_opCode = REG_WRITE;
+                    // access the retransmit_cnt_reg_ifElseRaw -- the number of time we retransmit
+                    // metadata for register access
+                    bit<1> use_retransmit_cnt = 0;
+                    bit<32> retransmit_newVal_2 = 0;
+                    bit<32> retransmit_incVal_2 = 0;
+                    bit<8> retransmit_opCode_2 = REG_READ;
+                    bit<32> retransmit_newVal_1 = 0;
+                    bit<32> retransmit_incVal_1 = 0;
+                    bit<8> retransmit_opCode_1 = REG_READ;
+                    bit<32> retransmit_compVal = 0;
+                    bit<8> retransmit_relOp = EQ_RELOP;
+                    bit<32> retransmit_result;          //  the retransmit_cnt
+                    bit<1> retransmit_boolean = 1;      //  default: don't retransmit -- retransmit_cnt = 1
 
-                        // reset ack_cnt
-                        ack_cnt_incVal = 0;
-                        ack_cnt_opCode = REG_WRITE;
-                        ack_cnt_compVal = 5;
-                        ack_cnt_relOp = LT_RELOP; // always true, since ack_cnt never get more than 3
+                    if (ack_ == 0) {                      
+                        earliest_newVal = p.tcp.seqNo;
+                        if ((p.tcp.flags & SYN_MASK) >> SYN_POS == 1) {
+                            earliest_compVal = 0; // initialise the earliestSeqNo for the first packet
+                            earliest_relOp = EQ_RELOP;
+                        } else {
+                            earliest_compVal = p.tcp.seqNo; // earliest_compVal = latest ACK received
+                                                            // --> only update if p.tcp.seqNo > latest ACK received
+                            earliest_relOp = GT_RELOP;
+                        }
+                        use_earliest_seq_no = 1;
 
-                        // reset retransmit_cnt
-                        retransmit_newVal_2 = 0; 
-                        retransmit_incVal_2 = 0;
-                        retransmit_opCode_2 = REG_WRITE;
-                        retransmit_newVal_1 = 0;
+                        if (greater == 1) {  // if (p.tcp.seqNo > latestSeqNo)
+                            //  new package -- add pkt to cache_queue
+                            cache_write(sume_metadata.dst_port);
+
+                            //  increment pkts_cached register
+                            pkts_cached_incVal = 1;
+                            pkts_cached_opCode = REG_ADD;
+                            use_pkts_cached_cnt = 1;                
+                        } //  else it's an old pkt that we have already cached -- do nothing
+                    } else { // ack_ == 1
+                        earliest_newVal = p.tcp.ackNo;
+                        earliest_compVal = 0;
+                        earliest_relOp = LT_RELOP; // always true -- 0 < current value
+                        use_earliest_seq_no = 1;
+
+                        ack_cnt_newVal = 0;
+
+                        if (p.tcp.ackNo > latestSeqNo) {
+                            pkts_cached_incVal = 0;
+                            pkts_cached_opCode = REG_WRITE;
+
+                            // reset ack_cnt
+                            ack_cnt_incVal = 0;
+                            ack_cnt_opCode = REG_WRITE;
+                            ack_cnt_compVal = 5;
+                            ack_cnt_relOp = LT_RELOP; // always true, since ack_cnt never get more than 3
+
+                            // reset retransmit_cnt
+                            retransmit_newVal_2 = 0; 
+                            retransmit_incVal_2 = 0;
+                            retransmit_opCode_2 = REG_WRITE;
+                            retransmit_newVal_1 = 0;
+                            retransmit_incVal_1 = 0;
+                            retransmit_opCode_1 = REG_WRITE;
+                            retransmit_compVal = 0;
+                            retransmit_relOp = EQ_RELOP;
+                            use_retransmit_cnt = 1;
+
+                        } else { // p.tcp.ackNo <= latestSeqNo -- potential DUP ACK
+                            pkts_cached_opCode = REG_SUB;
+
+                            ack_cnt_incVal = 1;
+                            ack_cnt_opCode = REG_ADD;
+                            ack_cnt_compVal = 3; // if ack_cnt < 3, ack_cnt++
+                            ack_cnt_relOp = GT_RELOP;
+                        }
+                        use_pkts_cached_cnt = 1;
+                        use_ack_cnt = 1;
+                    }
+                    
+                    if (use_earliest_seq_no == 1) {
+                        earliest_seq_no_reg_praw(hash_result, earliest_newVal, 0, REG_WRITE, 
+                                earliest_compVal, earliest_relOp, earliest_result, earliest_true);
+                    } // write to the register, but the previous result is stored in earliest_result
+                    
+                    bit<32> dropCount=0;  // the number of pkts dropped -- calculate this to update pkts_cached_cnt_reg_raw
+                    if ((ack_ == 1) && !(p.tcp.ackNo > latestSeqNo)) {
+                        dropCount = (p.tcp.ackNo-earliest_result) >> PKT_SIZE ; //  calculate number of pkts to drop 
+                        pkts_cached_incVal = dropCount;                 
+                        cache_drop(sume_metadata.src_port, dropCount);  //  drop some pkts -- e.g. cache 1, 2, 3; 
+                                                                        //  receive ack 2 --> drop 1
+                    }
+                    
+                    if (use_pkts_cached_cnt == 1) {
+                        pkts_cached_cnt_reg_raw(hash_result, pkts_cached_newVal, pkts_cached_incVal, 
+                                        pkts_cached_opCode, pkts_cached_result);
+                    }
+
+                    if ((ack_ == 1) && (p.tcp.ackNo > latestSeqNo)) {
+                        // this ackNo is more than latestSeqNo -- update, drop all cached pkts and reset counters
+                        // after pkts_cached_cnt register access --> pkts_cached_results should contain the total number of pkts
+                        cache_drop(sume_metadata.src_port, pkts_cached_result);
+                    }
+
+                    if (use_ack_cnt == 1) {
+                        ack_cnt_reg_praw(hash_result, ack_cnt_newVal, ack_cnt_incVal, ack_cnt_opCode, 
+                                ack_cnt_compVal, ack_cnt_relOp, ack_cnt_result, ack_cnt_true);
+                    }
+
+                    if ((ack_ == 1) && !(p.tcp.ackNo > latestSeqNo) && (ack_cnt_true == 0)) { // ack_cnt >= 3
+                        retransmit_newVal_2 = 0;   // if retransmit_cnt == 0, add 1
+                        retransmit_incVal_2 = 1;
+                        retransmit_opCode_2 = REG_ADD;
+                        retransmit_newVal_1 = 0;  //  if retransmit_cnt == 1, already retransmitted -- send pkt to src "as-is"
                         retransmit_incVal_1 = 0;
-                        retransmit_opCode_1 = REG_WRITE;
-                        retransmit_compVal = 0;
+                        retransmit_opCode_1 = REG_WRITE; //  reset retransmitCnt
+                        retransmit_compVal = 1;
                         retransmit_relOp = EQ_RELOP;
+
                         use_retransmit_cnt = 1;
-
-                    } else { // p.tcp.ackNo <= latestSeqNo -- potential DUP ACK
-                        pkts_cached_opCode = REG_SUB;
-
-                        ack_cnt_incVal = 1;
-                        ack_cnt_opCode = REG_ADD;
-                        ack_cnt_compVal = 3; // if ack_cnt < 3, ack_cnt++
-                        ack_cnt_relOp = GT_RELOP;
                     }
-                    use_pkts_cached_cnt = 1;
-                    use_ack_cnt = 1;
-                }
-                
-                if (use_earliest_seq_no == 1) {
-                    earliest_seq_no_reg_praw(hash_result, earliest_newVal, 0, REG_WRITE, 
-                            earliest_compVal, earliest_relOp, earliest_result, earliest_true);
-                } // write to the register, but the previous result is stored in earliest_result
-                
-                bit<32> dropCount=0;  // the number of pkts dropped -- calculate this to update pkts_cached_cnt_reg_raw
-                if ((ack_ == 1) && !(p.tcp.ackNo > latestSeqNo)) {
-                    dropCount = (p.tcp.ackNo-earliest_result) >> PKT_SIZE ; //  calculate number of pkts to drop 
-                    pkts_cached_incVal = dropCount;                 
-                    cache_drop(sume_metadata.src_port, dropCount);  //  drop some pkts -- e.g. cache 1, 2, 3; 
-                                                                    //  receive ack 2 --> drop 1
-                }
-                
-                if (use_pkts_cached_cnt == 1) {
-                    pkts_cached_cnt_reg_raw(hash_result, pkts_cached_newVal, pkts_cached_incVal, 
-                                    pkts_cached_opCode, pkts_cached_result);
-                }
 
-                if ((ack_ == 1) && (p.tcp.ackNo > latestSeqNo)) {
-                    // this ackNo is more than latestSeqNo -- update, drop all cached pkts and reset counters
-                    // after pkts_cached_cnt register access --> pkts_cached_results should contain the total number of pkts
-                    cache_drop(sume_metadata.src_port, pkts_cached_result);
-                }
+                    if (use_retransmit_cnt == 1) {
+                        retransmit_cnt_reg_ifElseRaw(hash_result,
+                                            retransmit_newVal_2,
+                                            retransmit_incVal_2,
+                                            retransmit_opCode_2,
+                                            hash_result,
+                                            retransmit_newVal_1,
+                                            retransmit_incVal_1,
+                                            retransmit_opCode_1,
+                                            hash_result,
+                                            retransmit_compVal,
+                                            retransmit_relOp,
+                                            retransmit_result,
+                                            retransmit_boolean);
+                    }
 
-                if (use_ack_cnt == 1) {
-                    ack_cnt_reg_praw(hash_result, ack_cnt_newVal, ack_cnt_incVal, ack_cnt_opCode, 
-                            ack_cnt_compVal, ack_cnt_relOp, ack_cnt_result, ack_cnt_true);
-                }
+                    if ((ack_ == 1) && !(p.tcp.ackNo > latestSeqNo)
+                            && (ack_cnt_true == 0) && (retransmit_boolean == 0)) {// retransmit_res = 0 means current value is not 1
+                                                                                // retransmit_compVal = 1; 
+                                                                                // sretransmit_relOp = EQ_RELOP
+                        //  haven't retransmitted -- retransmitCnt = 0 < N = 1
+                        //  resend pkt
+                        cache_read(sume_metadata.src_port);
 
-                if ((ack_ == 1) && !(p.tcp.ackNo > latestSeqNo) && (ack_cnt_true == 0)) { // ack_cnt >= 3
-                    retransmit_newVal_2 = 0;   // if retransmit_cnt == 0, add 1
-                    retransmit_incVal_2 = 1;
-                    retransmit_opCode_2 = REG_ADD;
-                    retransmit_newVal_1 = 0;  //  if retransmit_cnt == 1, already retransmitted -- send pkt to src "as-is"
-                    retransmit_incVal_1 = 0;
-                    retransmit_opCode_1 = REG_WRITE; //  reset retransmitCnt
-                    retransmit_compVal = 1;
-                    retransmit_relOp = EQ_RELOP;
-
-                    use_retransmit_cnt = 1;
-                }
-
-                if (use_retransmit_cnt == 1) {
-                    retransmit_cnt_reg_ifElseRaw(hash_result,
-                                        retransmit_newVal_2,
-                                        retransmit_incVal_2,
-                                        retransmit_opCode_2,
-                                        hash_result,
-                                        retransmit_newVal_1,
-                                        retransmit_incVal_1,
-                                        retransmit_opCode_1,
-                                        hash_result,
-                                        retransmit_compVal,
-                                        retransmit_relOp,
-                                        retransmit_result,
-                                        retransmit_boolean);
-                }
-
-                if ((ack_ == 1) && !(p.tcp.ackNo > latestSeqNo)
-                        && (ack_cnt_true == 0) && (retransmit_boolean == 0)) {  // retransmit_res = 0 means current value is not 1
-                                                                              // retransmit_compVal = 1; 
-                                                                              // sretransmit_relOp = EQ_RELOP
-                    //  haven't retransmitted -- retransmitCnt = 0 < N = 1
-                    //  resend pkt
-                    cache_read(sume_metadata.src_port);
-
-                    //  send this pkt to host with ACK flag = 0
-                    p.tcp.flags = p.tcp.flags ^ ACK_MASK;
+                        //  send this pkt to host with ACK flag = 0
+                        p.tcp.flags = p.tcp.flags ^ ACK_MASK;
+                    }
                 }
             }
         }
