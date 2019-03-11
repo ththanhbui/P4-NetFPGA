@@ -346,7 +346,6 @@ module sss_output_queues
    wire clear_counters;
    wire reset_registers;
 
-
    // ------------ SSS additions -------------
 
    localparam DIGEST_WIDTH = 256;
@@ -358,6 +357,7 @@ module sss_output_queues
    wire [BUFFER_SIZE_WIDTH:0] data_queue_depth[NUM_QUEUES-1:0];
 
    reg [15:0] digest_len;
+
    // ------------ Modules -------------
 
    generate

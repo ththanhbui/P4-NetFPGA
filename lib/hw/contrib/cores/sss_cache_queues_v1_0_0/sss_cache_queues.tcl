@@ -147,14 +147,3 @@ update_ip_catalog
 close_project
 
 file delete -force ${proj_dir} 
-
-
-
-
-
-
-
-
-
-
-

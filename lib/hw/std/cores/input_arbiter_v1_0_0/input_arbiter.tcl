@@ -138,16 +138,3 @@ ipx::check_integrity [ipx::current_core]
 ipx::save_core [ipx::current_core]
 update_ip_catalog
 close_project
-
-
-
-
-
-
-
-
-
-
-
-
-

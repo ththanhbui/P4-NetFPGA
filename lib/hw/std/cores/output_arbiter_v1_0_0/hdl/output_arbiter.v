@@ -234,27 +234,6 @@ module output_arbiter
    assign in_tlast[1]        = s_axis_1_tlast;
    assign s_axis_1_tready    = !nearly_full[1];
 
-   assign in_tdata[2]        = s_axis_2_tdata;
-   assign in_tkeep[2]        = s_axis_2_tkeep;
-   assign in_tuser[2]        = s_axis_2_tuser;
-   assign in_tvalid[2]       = s_axis_2_tvalid;
-   assign in_tlast[2]        = s_axis_2_tlast;
-   assign s_axis_2_tready    = !nearly_full[2];
-
-   assign in_tdata[3]        = s_axis_3_tdata;
-   assign in_tkeep[3]        = s_axis_3_tkeep;
-   assign in_tuser[3]        = s_axis_3_tuser;
-   assign in_tvalid[3]       = s_axis_3_tvalid;
-   assign in_tlast[3]        = s_axis_3_tlast;
-   assign s_axis_3_tready    = !nearly_full[3];
-
-   assign in_tdata[4]        = s_axis_4_tdata;
-   assign in_tkeep[4]        = s_axis_4_tkeep;
-   assign in_tuser[4]        = s_axis_4_tuser;
-   assign in_tvalid[4]       = s_axis_4_tvalid;
-   assign in_tlast[4]        = s_axis_4_tlast;
-   assign s_axis_4_tready    = !nearly_full[4];
-
    assign cur_queue_plus1    = (cur_queue == NUM_QUEUES-1) ? 0 : cur_queue + 1;
 
 
@@ -385,8 +364,8 @@ always @(posedge axis_aclk)
 		id_reg <= #1    `REG_ID_DEFAULT;
 		version_reg <= #1    `REG_VERSION_DEFAULT;
 		ip2cpu_flip_reg <= #1    ~cpu2ip_flip_reg;
-		pktin_reg[`REG_PKTIN_WIDTH -2: 0] <= #1  clear_counters | pktin_reg_clear ? 'h0  : pktin_reg[`REG_PKTIN_WIDTH-2:0] + (s_axis_0_tlast && s_axis_0_tvalid && s_axis_0_tready ) + (s_axis_1_tlast && s_axis_1_tvalid && s_axis_1_tready) + (s_axis_2_tlast && s_axis_2_tvalid && s_axis_2_tready) + (s_axis_3_tlast && s_axis_3_tvalid && s_axis_3_tready) + (s_axis_4_tlast && s_axis_4_tvalid && s_axis_4_tready)  ;
-        pktin_reg[`REG_PKTIN_WIDTH-1] <= #1 clear_counters | pktin_reg_clear ? 1'h0 : pktin_reg_clear ? 'h0  : pktin_reg[`REG_PKTIN_WIDTH-2:0] + pktin_reg[`REG_PKTIN_WIDTH-2:0] + (s_axis_0_tlast && s_axis_0_tvalid && s_axis_0_tready ) + (s_axis_1_tlast && s_axis_1_tvalid && s_axis_1_tready) + (s_axis_2_tlast && s_axis_2_tvalid && s_axis_2_tready) + (s_axis_3_tlast && s_axis_3_tvalid && s_axis_3_tready) + (s_axis_4_tlast && s_axis_4_tvalid && s_axis_4_tready) > {(`REG_PKTIN_WIDTH-1){1'b1}} ? 1'b1 : pktin_reg[`REG_PKTIN_WIDTH-1];
+		pktin_reg[`REG_PKTIN_WIDTH -2: 0] <= #1  clear_counters | pktin_reg_clear ? 'h0  : pktin_reg[`REG_PKTIN_WIDTH-2:0] + (s_axis_0_tlast && s_axis_0_tvalid && s_axis_0_tready ) + (s_axis_1_tlast && s_axis_1_tvalid && s_axis_1_tready)  ;
+        pktin_reg[`REG_PKTIN_WIDTH-1] <= #1 clear_counters | pktin_reg_clear ? 1'h0 : pktin_reg_clear ? 'h0  : pktin_reg[`REG_PKTIN_WIDTH-2:0] + pktin_reg[`REG_PKTIN_WIDTH-2:0] + (s_axis_0_tlast && s_axis_0_tvalid && s_axis_0_tready ) + (s_axis_1_tlast && s_axis_1_tvalid && s_axis_1_tready)  > {(`REG_PKTIN_WIDTH-1){1'b1}} ? 1'b1 : pktin_reg[`REG_PKTIN_WIDTH-1];
                                                                
 		pktout_reg [`REG_PKTOUT_WIDTH-2:0]<= #1  clear_counters | pktout_reg_clear ? 'h0  : pktout_reg [`REG_PKTOUT_WIDTH-2:0] + (m_axis_tvalid && m_axis_tlast && m_axis_tready ) ;
                 pktout_reg [`REG_PKTOUT_WIDTH-1]<= #1  clear_counters | pktout_reg_clear ? 'h0  : pktout_reg [`REG_PKTOUT_WIDTH-2:0] + (m_axis_tvalid && m_axis_tlast && m_axis_tready) > {(`REG_PKTOUT_WIDTH-1){1'b1}} ?

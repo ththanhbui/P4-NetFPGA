@@ -361,14 +361,16 @@ module sss_cache_queues
     (* mark_debug = "true" *) wire send_dig_to_cpu;
     (* mark_debug = "true" *) wire [DIGEST_WIDTH-1:0] digest_data;
 
-
     wire [C_S_AXIS_DATA_WIDTH/8 + C_S_AXIS_DATA_WIDTH:0] data_queue_in[NUM_QUEUES-1:0];
     (* mark_debug = "true" *) wire [NUM_QUEUES-1:0] data_queue_wr_en;
     wire [C_S_AXIS_TUSER_WIDTH-1:0] metadata_queue_in[NUM_QUEUES-1:0];
     (* mark_debug = "true" *) wire [NUM_QUEUES-1:0] metadata_queue_wr_en;
     wire [BUFFER_SIZE_WIDTH:0] data_queue_depth[NUM_QUEUES-1:0];
 
+    reg [15:0] digest_len;
+
     //-------------Cache additions ---------------
+
     wire [7:0]   cache_write; // one-hot encoded:  {0, 0, 0, DMA, NF3, NF2, NF1, NF0}
     wire [7:0]   cache_read;  // one-hot encoded:  {0, 0, 0, DMA, NF3, NF2, NF1, NF0}
     wire [7:0]   cache_drop;  // one-hot encoded:  {0, 0, 0, DMA, NF3, NF2, NF1, NF0}
@@ -382,12 +384,13 @@ module sss_cache_queues
     // ------------ Modules -------------
     localparam SEND_DIG_POS = 40; 
     assign send_dig_to_cpu = s_axis_tuser[SEND_DIG_POS];
-    assign digest_data = s_axis_tuser[127:48];
+    assign digest_data = s_axis_tuser[C_S_AXIS_TUSER_WIDTH-1:48];
 
     assign  cache_write = s_axis_tuser[55:48];
     assign  cache_read  = s_axis_tuser[63:56];
     assign  cache_drop  = s_axis_tuser[71:64];
     assign  cache_count = s_axis_tuser[79:72];
+    
     generate
     genvar i;
     for(i=0; i<NUM_QUEUES; i=i+1) begin: sss_cache_queues
@@ -512,11 +515,8 @@ module sss_cache_queues
 
    // Per NetFPGA-10G AXI Spec
    localparam DST_POS = 24;
-   localparam SEND_DIG_POS = 40;
    
    always @(*) begin
-       send_dig_to_cpu = s_axis_tuser[SEND_DIG_POS];
-       digest_data = s_axis_tuser[C_S_AXIS_TUSER_WIDTH-1:48];
        oq = s_axis_tuser[DST_POS] |
            (s_axis_tuser[DST_POS + 2] << 1) |
            (s_axis_tuser[DST_POS + 4] << 2) |
