@@ -33,4 +33,4 @@ table_cam_add_entry forward set_output_port 08:33:33:33:33:08 => 0b00010000
 table_cam_add_entry forward set_output_port 08:44:44:44:44:08 => 0b01000000
 table_cam_add_entry forward set_output_port ff:ff:ff:ff:ff:ff => 0b01010101
 
-table_cam_add_entry retransmit NoAction 00001010000000000000000000000001000010100000000000000000000000100000011000000000001101110000000001001011 => 0
+table_cam_add_entry retransmit NoAction 792281630049477301766976897099 => 

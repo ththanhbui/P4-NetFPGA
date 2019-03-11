@@ -428,7 +428,7 @@ module @MODULE_NAME@
 
           WRITE_RESULT: begin
              valid_out = 1;
-             result_out = result_r;
+             result_out = result_r_next;
              d_state_next = START_REQ;
           end
       endcase // case(d_state)
