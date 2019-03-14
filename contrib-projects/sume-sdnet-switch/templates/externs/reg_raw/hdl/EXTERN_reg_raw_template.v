@@ -370,6 +370,8 @@ module @MODULE_NAME@
                           d_addr_in_bram = index_fifo;
                           d_addr_in_bram_r_next = index_fifo;
                           d_data_in_bram = newVal_fifo;
+                          index_fifo_r_next = index_fifo;
+                          opCode_fifo_r_next = opCode_fifo;
                         //   result_r_next = newVal_fifo;
                           d_state_next = WAIT_BRAM;
                       end
@@ -397,7 +399,7 @@ module @MODULE_NAME@
           WAIT_BRAM: begin
               if (cycle_cnt == 1'b1) begin // 2 cycle BRAM read latency
                   cycle_cnt_next = 0;
-                  if ((opCode_fifo_r == `READ_OP) || (opCode_fifo_r == `WRITE_OP)) begin
+                  if ((opCode_fifo_r == `WRITE_OP) || (opCode_fifo_r == `READ_OP)) begin
                       result_r_next = d_data_out_bram;
                   end
                   else if (opCode_fifo_r == `ADD_OP) begin
@@ -428,7 +430,7 @@ module @MODULE_NAME@
 
           WRITE_RESULT: begin
              valid_out = 1;
-             result_out = result_r_next;
+             result_out = result_r;
              d_state_next = START_REQ;
           end
       endcase // case(d_state)

@@ -79,12 +79,12 @@ typedef bit<32> IPv4Addr_t;
 
 
 // hash function
-@Xilinx_MaxLatency(1)
+@Xilinx_MaxLatency(64)
 @Xilinx_ControlWidth(0)
 extern void hash_lrc(in bit<104> in_data, out bit<HASH_WIDTH> result);
 
 // latest_seq_no register
-@Xilinx_MaxLatency(1)
+@Xilinx_MaxLatency(64)
 @Xilinx_ControlWidth(HASH_WIDTH)
 extern void seq_no_reg_praw(in bit<HASH_WIDTH> index,
                              in bit<32> newVal,
@@ -96,7 +96,7 @@ extern void seq_no_reg_praw(in bit<HASH_WIDTH> index,
                              out bit<1> boolean);
 
 // latest_ack_no register
-@Xilinx_MaxLatency(1)
+@Xilinx_MaxLatency(64)
 @Xilinx_ControlWidth(HASH_WIDTH)
 extern void latest_ack_no_reg_praw(in bit<HASH_WIDTH> index,
                                     in bit<32> newVal,
@@ -109,7 +109,7 @@ extern void latest_ack_no_reg_praw(in bit<HASH_WIDTH> index,
                                                                  
 
 // pkts_cached_cnt 
-@Xilinx_MaxLatency(1)
+@Xilinx_MaxLatency(64)
 @Xilinx_ControlWidth(HASH_WIDTH)
 extern void pkts_cached_cnt_reg_raw(in bit<HASH_WIDTH> index,
                                     in bit<32> newVal,
@@ -118,7 +118,7 @@ extern void pkts_cached_cnt_reg_raw(in bit<HASH_WIDTH> index,
                                     out bit<32> result);
 
 // ack_cnt register
-@Xilinx_MaxLatency(1)
+@Xilinx_MaxLatency(64)
 @Xilinx_ControlWidth(HASH_WIDTH)
 extern void ack_cnt_reg_praw(in bit<HASH_WIDTH> index,
                             in bit<32> newVal,
@@ -130,7 +130,7 @@ extern void ack_cnt_reg_praw(in bit<HASH_WIDTH> index,
                             out bit<1> boolean);
 
 // retransmit_cnt register
-@Xilinx_MaxLatency(1)
+@Xilinx_MaxLatency(64)
 @Xilinx_ControlWidth(HASH_WIDTH)
 extern void retransmit_cnt_reg_ifElseRaw(in bit<HASH_WIDTH> index_2,
                                         in bit<32> newVal_2,
@@ -460,12 +460,12 @@ control TopPipe(inout Parsed_packet p,
                             if (p.tcp.ackNo <= latestSeqNo) {
                                 dropCount = (p.tcp.ackNo-latest_result) >> PKT_SIZE ; //  calculate number of pkts to drop 
                                 pkts_cached_incVal = dropCount;
-                                pkts_cached_opCode = REG_SUB;
+                                pkts_cached_opCode = REG_SUB; // REG_SUB
                                 cache_drop(sume_metadata.src_port, dropCount);  //  drop SOME pkts -- e.g. cache 1, 2, 3; 
                                                                                 //  receive ack 2 --> drop 1
                             } else {
                                 pkts_cached_incVal = 0;
-                                pkts_cached_opCode = REG_READ; // suppose to be REG_WRITE
+                                pkts_cached_opCode = REG_WRITE; // suppose to be REG_WRITE
                             }
                             use_pkts_cached_cnt = 1;
 
@@ -494,7 +494,7 @@ control TopPipe(inout Parsed_packet p,
                         }
                         use_ack_cnt = 1;
                     }
-                    
+
                     if (use_pkts_cached_cnt == 1) {
                         pkts_cached_cnt_reg_raw(hash_result, pkts_cached_newVal, pkts_cached_incVal, 
                                         pkts_cached_opCode, pkts_cached_result);
@@ -503,7 +503,7 @@ control TopPipe(inout Parsed_packet p,
                     if ((ack_ == 1) && (latest_true == 1) && (p.tcp.ackNo > latestSeqNo)) {            
                         // p.tcp.ackNo > latestSeqNo -- update, drop all cached pkts and reset counters
                         // after pkts_cached_cnt register access --> pkts_cached_result should contain the total number of pkts
-                        cache_drop(sume_metadata.src_port, pkts_cached_result);
+                        cache_drop(sume_metadata.src_port, 2);
                     }
 
                     if (use_ack_cnt == 1) {

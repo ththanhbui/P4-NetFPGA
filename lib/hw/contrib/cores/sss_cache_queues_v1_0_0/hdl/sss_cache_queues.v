@@ -382,6 +382,7 @@ module sss_cache_queues
    
 
     // ------------ Modules -------------
+
     localparam SEND_DIG_POS = 40; 
     assign send_dig_to_cpu = s_axis_tuser[SEND_DIG_POS];
     assign digest_data = s_axis_tuser[C_S_AXIS_TUSER_WIDTH-1:48];
@@ -547,10 +548,10 @@ module sss_cache_queues
       bytes_dropped_next = 0;
 
       // default inputs to queues
-      for (j=0; j < NUM_QUEUES; j=j+1) begin
-          data_queue_in[j] = {s_axis_tlast, s_axis_tkeep, s_axis_tdata};
-          metadata_queue_in[j] = s_axis_tuser[C_M_AXIS_TUSER_WIDTH-1:0]; // trim digest_data to 80bits
-      end
+//       for (j=0; j < NUM_QUEUES; j=j+1) begin
+//           data_queue_in[j] = {s_axis_tlast, s_axis_tkeep, s_axis_tdata};
+//           metadata_queue_in[j] = s_axis_tuser[C_M_AXIS_TUSER_WIDTH-1:0]; // trim digest_data to 80bits
+//       end
 
       case(state)
 
@@ -567,19 +568,19 @@ module sss_cache_queues
                   if (oq[DMA_QUEUE] == 1) begin
                       // We are sending the pkt over DMA so prepend the digest data to the pkt
                       wr_en[DMA_QUEUE] = send_dig_to_cpu;
-                      data_queue_in[DMA_QUEUE] = {1'b0, {(DIGEST_WIDTH/8){1'b1}} , digest_data};
+                //       data_queue_in[DMA_QUEUE] = {1'b0, {(DIGEST_WIDTH/8){1'b1}} , digest_data};
                       metadata_wr_en[DMA_QUEUE] = 1;
-                      if (send_dig_to_cpu)
-                          metadata_queue_in[DMA_QUEUE] = {s_axis_tuser[C_M_AXIS_TUSER_WIDTH-1:16], s_axis_tuser[15:0] + digest_len};
-                      else
-                          metadata_queue_in[DMA_QUEUE] = {s_axis_tuser[C_M_AXIS_TUSER_WIDTH-1:16], s_axis_tuser[15:0]};
+                //       if (send_dig_to_cpu)
+                //           metadata_queue_in[DMA_QUEUE] = {s_axis_tuser[C_M_AXIS_TUSER_WIDTH-1:16], s_axis_tuser[15:0] + digest_len};
+                //       else
+                //           metadata_queue_in[DMA_QUEUE] = {s_axis_tuser[C_M_AXIS_TUSER_WIDTH-1:16], s_axis_tuser[15:0]};
                   end
                   else if (send_dig_to_cpu) begin
                       // We just want to send the digest data over DMA
                       wr_en[DMA_QUEUE] = 1;
-                      data_queue_in[DMA_QUEUE] = {1'b1, {(DIGEST_WIDTH/8){1'b1}} , digest_data};
+                //       data_queue_in[DMA_QUEUE] = {1'b1, {(DIGEST_WIDTH/8){1'b1}} , digest_data};
                       metadata_wr_en[DMA_QUEUE] = 1;
-                      metadata_queue_in[DMA_QUEUE] = {96'b0, 8'b0000_0010, 8'b0, digest_len};
+                //       metadata_queue_in[DMA_QUEUE] = {96'b0, 8'b0000_0010, 8'b0, digest_len};
                   end
               end
               else begin
