@@ -319,13 +319,14 @@ flow1 = make_flow(IP1_src, IP1_dst, sport, dport, 192)  # 3
 flow2 = make_flow(IP2_src, IP2_dst, sport, dport, 320)  # 5
 flow3 = make_flow(IP3_src, IP3_dst, sport, dport, 320)  # 5
 # trace = mix_flows([flow1, flow2, flow3])
-trace = flow2
+# trace = mix_flows([flow2, flow3])
+trace = mix_flows([flow1])
 
 # apply the trace
 for pkt in trace:
     applyPkt(pkt, "nf0", pktCnt)
     pktCnt += 1
-
+# 
     flow_id = compute_tuple(pkt[IP].src, pkt[IP].dst, 6, pkt[TCP].sport, pkt[TCP].dport)
     action=0
     if (flow_id == 792281630049477301766976897099):
