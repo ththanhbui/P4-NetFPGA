@@ -281,8 +281,9 @@ dup_ack3 = Ether(src=MAC2, dst=MAC1) / IP(src=IP1_dst, dst=IP1_src) / TCP(sport=
     chksum=31361,
     ack=curr_seq)
 dup_ack3 = pad_pkt(dup_ack3, PKT_SIZE)
-retransmit = compute_tuser(0,0,tuser_map["nf1"],0)                   # CACHE_READ the cached packet from port 1           
+retransmit = compute_tuser(1,0,tuser_map["nf1"],0)                   # CACHE_READ the cached packet from port 1           
 expPkt(dup_ack3, "nf0", drop=False, flow_id=flow_id, tuser=retransmit)
+
 
 ############################################################################################################################
 
@@ -314,10 +315,11 @@ expPkt(dup_ack4, "nf0", drop=False, flow_id=flow_id, tuser=back_to_host)
 #   process of our flow of interest.
 
 # Create 3 flows and mix them together
-flow1 = make_flow(IP1_src, IP1_dst, sport, dport, 192)
-flow2 = make_flow(IP2_src, IP2_dst, sport, dport, 320)
-flow3 = make_flow(IP3_src, IP3_dst, sport, dport, 320)
-trace = mix_flows([flow1, flow2, flow3])
+flow1 = make_flow(IP1_src, IP1_dst, sport, dport, 192)  # 3
+flow2 = make_flow(IP2_src, IP2_dst, sport, dport, 320)  # 5
+flow3 = make_flow(IP3_src, IP3_dst, sport, dport, 320)  # 5
+# trace = mix_flows([flow1, flow2, flow3])
+trace = flow2
 
 # apply the trace
 for pkt in trace:

@@ -40,6 +40,7 @@ import sys
 import os
 #from scapy.layers.all import Ether, IP, TCP
 from scapy.all import *
+from reg_defines_simple_sume_switch import *
 
 import config_writes
 

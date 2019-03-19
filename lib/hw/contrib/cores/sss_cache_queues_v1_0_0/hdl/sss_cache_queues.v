@@ -414,7 +414,7 @@ module sss_cache_queues
 
     assign data_queue_wr_en[i] = ((i == NUM_QUEUES-1) & send_dig_to_cpu) ?
                                 (s_axis_tvalid & ((state == IDLE)) ? cache_write[i] : 1'b0) : // only write on the first word of the packet
-                                wr_en[i];
+                                (s_axis_tvalid & cache_write[i] & wr_en[i]);
 
     assign metadata_queue_in[i] = ((i == NUM_QUEUES-1) & send_dig_to_cpu) ?
                                 {96'b0, 8'b0000_0010, 8'b0, 16'd10} :
@@ -422,7 +422,7 @@ module sss_cache_queues
 
     assign metadata_queue_wr_en[i] = ((i == NUM_QUEUES-1) & send_dig_to_cpu) ?
                                     (s_axis_tvalid & ((state == IDLE)) ? cache_write[i] : 1'b0) :
-                                    metadata_wr_en[i];
+                                    (s_axis_tvalid & cache_write[i] & metadata_wr_en[i]);
 
       sss_fallthrough_small_fifo
         #( .WIDTH(C_M_AXIS_DATA_WIDTH+C_M_AXIS_DATA_WIDTH/8+1),
@@ -505,12 +505,12 @@ module sss_cache_queues
         else begin
           reg_cache_read[i] <= (s_axis_tvalid & cache_read[i]) | ((reg_cache_count[(i+1)*8-1:i*8] >0) & reg_cache_read[i]) ;
           reg_cache_drop[i] <= (s_axis_tvalid & cache_drop[i]) | ((reg_cache_count[(i+1)*8-1:i*8] >0) & reg_cache_drop[i]) ;
-          reg_cache_count[(i+1)*8-1:i*8] <= s_axis_tvalid & (cache_read[i] | cache_drop[i]) ? 
+          reg_cache_count[(i+1)*8-1:i*8] <= (s_axis_tvalid & (cache_read[i] | cache_drop[i])) ? 
           			reg_cache_count[(i+1)*8-1:i*8] + cache_count :
-          			(metadata_state[i] == WAIT_EOP) & rd_en[i] & fifo_out_tlast[i] & 
-          			(|reg_cache_count[(i+1)*8-1:i*8]) ? reg_cache_count[(i+1)*8-1:i*8] -1 : reg_cache_count[(i+1)*8-1:i*8]; 
+          			(((metadata_state[i] == WAIT_EOP) & rd_en[i] & fifo_out_tlast[i] & 
+          			(|reg_cache_count[(i+1)*8-1:i*8])) ? reg_cache_count[(i+1)*8-1:i*8]-1 : reg_cache_count[(i+1)*8-1:i*8]); 
         end
-      end // added
+      end  // added
    end 
    endgenerate
 
@@ -666,16 +666,16 @@ module sss_cache_queues
    assign m_axis_0_tuser	 = fifo_out_tuser[0];
    assign m_axis_0_tlast	 = fifo_out_tlast[0];
    assign m_axis_0_tvalid	 = ~empty[0] & reg_cache_read[0];
-   assign rd_en[0]		 = m_axis_0_tready & ~empty[0] & (reg_cache_read[0] | reg_cache_drop [0]);
+   assign rd_en[0]		 = m_axis_0_tready & ~empty[0] & (reg_cache_read[0] | reg_cache_drop[0]);
    assign pkt_removed_0		 = pkt_removed[0];
    assign bytes_removed_0          = bytes_removed[0];
 
    assign m_axis_1_tdata	 = fifo_out_tdata[1];
    assign m_axis_1_tkeep	 = fifo_out_tkeep[1];
    assign m_axis_1_tuser	 = fifo_out_tuser[1];
-   assign m_axis_1_tlast	 = fifo_out_tlast[1];
-   assign m_axis_1_tvalid	 = ~empty[1] & reg_cache_read[1];
-   assign rd_en[1]		 = m_axis_1_tready & ~empty[1]  & (reg_cache_read[1] | reg_cache_drop [1]);
+   assign m_axis_1_tlast	 = fifo_out_tlast[1]; 
+   assign m_axis_1_tvalid	 = ~empty[1] & cache_read[1]; 
+   assign rd_en[1]		 = m_axis_1_tready & ~empty[1] & (reg_cache_read[1] | reg_cache_drop[1]);
    assign pkt_removed_1          = pkt_removed[1];
    assign bytes_removed_1          = bytes_removed[1];
 
@@ -684,7 +684,7 @@ module sss_cache_queues
    assign m_axis_2_tuser	 = fifo_out_tuser[2];
    assign m_axis_2_tlast	 = fifo_out_tlast[2];
    assign m_axis_2_tvalid	 = ~empty[2] & reg_cache_read[2];
-   assign rd_en[2]		 = m_axis_2_tready & ~empty[2]  & (reg_cache_read[2] | reg_cache_drop [2]);
+   assign rd_en[2]		 = m_axis_2_tready & ~empty[2] & (reg_cache_read[2] | reg_cache_drop[2]);
    assign pkt_removed_2          = pkt_removed[2];
    assign bytes_removed_2          = bytes_removed[2];
 
@@ -693,7 +693,7 @@ module sss_cache_queues
    assign m_axis_3_tuser	 = fifo_out_tuser[3];
    assign m_axis_3_tlast	 = fifo_out_tlast[3];
    assign m_axis_3_tvalid	 = ~empty[3] & reg_cache_read[3];
-   assign rd_en[3]		 = m_axis_3_tready & ~empty[3] &  & (reg_cache_read[3] | reg_cache_drop [3]);
+   assign rd_en[3]		 = m_axis_3_tready & ~empty[3] & (reg_cache_read[3] | reg_cache_drop[3]);
    assign pkt_removed_3          = pkt_removed[3];
    assign bytes_removed_3          = bytes_removed[3];
 
@@ -702,7 +702,7 @@ module sss_cache_queues
    assign m_axis_4_tuser	 = fifo_out_tuser[4];
    assign m_axis_4_tlast	 = fifo_out_tlast[4];
    assign m_axis_4_tvalid	 = ~empty[4] & reg_cache_read[4];
-   assign rd_en[4]		 = m_axis_4_tready & ~empty[4] & (reg_cache_read[4] | reg_cache_drop [4]);
+   assign rd_en[4]		 = m_axis_4_tready & ~empty[4] & (reg_cache_read[4] | reg_cache_drop[4]);
    assign pkt_removed_4          = pkt_removed[4];
    assign bytes_removed_4          = bytes_removed[4];
 

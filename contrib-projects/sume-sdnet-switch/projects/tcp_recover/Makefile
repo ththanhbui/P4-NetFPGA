@@ -96,27 +96,21 @@ install_sdnet: uninstall_sdnet
 uninstall_sdnet:
 	rm -rf ${TARGET}/${SDNET_OUT_DIR}
 
+core:
+	make -C $(SUME_FOLDER)
+
 vivado_sim:
 	make -C $(P4_PROJECT_DIR)
 	cd $(P4_PROJECT_DIR)/nf_sume_sdnet_ip/SimpleSumeSwitch/; ./vivado_sim.bash
 
-sume_sim:
-	make -C $(SUME_FOLDER)
+sume_sim: vivado_sim
 	make -C $(P4_PROJECT_DIR) config_writes
 	make -C $(P4_PROJECT_DIR) uninstall_sdnet
 	make -C $(P4_PROJECT_DIR) install_sdnet
 	make -C $(NF_DESIGN_DIR)/test/sim_switch_default
 	$(SUME_FOLDER)/tools/scripts/nf_test.py sim --major switch --minor default
 
-workflow:
-	make -C $(SUME_FOLDER)
-	make -C $(P4_PROJECT_DIR)
-	cd $(P4_PROJECT_DIR)/nf_sume_sdnet_ip/SimpleSumeSwitch/; ./vivado_sim.bash
-	make -C $(P4_PROJECT_DIR) config_writes
-	make -C $(P4_PROJECT_DIR) uninstall_sdnet
-	make -C $(P4_PROJECT_DIR) install_sdnet
-	make -C $(NF_DESIGN_DIR)/test/sim_switch_default
-	$(SUME_FOLDER)/tools/scripts/nf_test.py sim --major switch --minor default
+workflow: core sume_sim
 
 clean:
 	make -C src/ clean

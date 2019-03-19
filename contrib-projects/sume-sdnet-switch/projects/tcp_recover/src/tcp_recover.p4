@@ -268,7 +268,7 @@ control TopPipe(inout Parsed_packet p,
                      (((port >> 4) & 1) << 2) |
                      (((port >> 6) & 1) << 3) |
                      (( ((port >> 1) & 1) | ((port >> 3) & 1) | ((port >> 5) & 1) | ((port >> 7) & 1) ) << 4);
-        digest_data.tuser = PADDING_80++8w0++UNUSED++cache_port++UNUSED;
+        digest_data.tuser = PADDING_80++8w1++UNUSED++cache_port++UNUSED;
     }
 
     action cache_drop(port_t port, bit<32> drop_count) {
