@@ -96,21 +96,27 @@ install_sdnet: uninstall_sdnet
 uninstall_sdnet:
 	rm -rf ${TARGET}/${SDNET_OUT_DIR}
 
+workflow: core sume_sim
+
 core:
 	make -C $(SUME_FOLDER)
+
+sume_sim: cache vivado_sim
+	make -C $(P4_PROJECT_DIR) config_writes
+	make -C $(P4_PROJECT_DIR) uninstall_sdnet
+	make -C $(P4_PROJECT_DIR) install_sdnet
+	make -C $(NF_DESIGN_DIR)/test/sim_switch_default
+	$(SUME_FOLDER)/tools/scripts/nf_test.py sim --major switch --minor default 
 
 vivado_sim:
 	make -C $(P4_PROJECT_DIR)
 	cd $(P4_PROJECT_DIR)/nf_sume_sdnet_ip/SimpleSumeSwitch/; ./vivado_sim.bash
 
-sume_sim: vivado_sim
-	make -C $(P4_PROJECT_DIR) config_writes
-	make -C $(P4_PROJECT_DIR) uninstall_sdnet
-	make -C $(P4_PROJECT_DIR) install_sdnet
-	make -C $(NF_DESIGN_DIR)/test/sim_switch_default
-	$(SUME_FOLDER)/tools/scripts/nf_test.py sim --major switch --minor default
-
-workflow: core sume_sim
+cache:
+	make -C $(SUME_FOLDER)/lib/hw/contrib/cores/sss_cache_queues_v1_0_0/
+	@echo "/////////////////////////////////////////";
+	@echo "//Library cores created.";
+	@echo "/////////////////////////////////////////";
 
 clean:
 	make -C src/ clean

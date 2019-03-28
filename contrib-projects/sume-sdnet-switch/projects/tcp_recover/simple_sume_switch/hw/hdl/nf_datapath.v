@@ -253,6 +253,20 @@ module nf_datapath #(
     (* mark_debug = "true" *) wire                                     m_axis_cq_3_tvalid;
     (* mark_debug = "true" *) wire                                     m_axis_cq_3_tready;
     (* mark_debug = "true" *) wire                                     m_axis_cq_3_tlast;
+
+    (* mark_debug = "true" *) wire [C_M_AXIS_DATA_WIDTH - 1:0]         m_axis_oq_4_tdata;
+    (* mark_debug = "true" *) wire [((C_M_AXIS_DATA_WIDTH / 8)) - 1:0] m_axis_oq_4_tkeep;
+    (* mark_debug = "true" *) wire [C_AXIS_TUSER_DIGEST_WIDTH-1:0]     m_axis_oq_4_tuser;
+    (* mark_debug = "true" *) wire                                     m_axis_oq_4_tvalid;
+    (* mark_debug = "true" *) wire                                     m_axis_oq_4_tready;
+    (* mark_debug = "true" *) wire                                     m_axis_oq_4_tlast;
+    
+    (* mark_debug = "true" *) wire [C_M_AXIS_DATA_WIDTH - 1:0]         m_axis_cq_4_tdata;
+    (* mark_debug = "true" *) wire [((C_M_AXIS_DATA_WIDTH / 8)) - 1:0] m_axis_cq_4_tkeep;
+    (* mark_debug = "true" *) wire [C_AXIS_TUSER_DIGEST_WIDTH-1:0]     m_axis_cq_4_tuser;
+    (* mark_debug = "true" *) wire                                     m_axis_cq_4_tvalid;
+    (* mark_debug = "true" *) wire                                     m_axis_cq_4_tready;
+    (* mark_debug = "true" *) wire                                     m_axis_cq_4_tlast;
     
     (* mark_debug = "true" *) wire [C_M_AXIS_DATA_WIDTH - 1:0]         s_axis_opl_tdata;
     (* mark_debug = "true" *) wire [((C_M_AXIS_DATA_WIDTH / 8)) - 1:0] s_axis_opl_tkeep;
@@ -541,14 +555,14 @@ module nf_datapath #(
       .S_AXI_ARADDR(S2_AXI_ARADDR), 
       .S_AXI_ARVALID(S2_AXI_ARVALID),
       .S_AXI_RREADY(S2_AXI_RREADY), 
-      .S_AXI_ARREADY(S2_AXI_ARREADY),
-      .S_AXI_RDATA(S2_AXI_RDATA),  
+      .S_AXI_ARREADY(),
+      .S_AXI_RDATA(),  
       .S_AXI_RRESP(S2_AXI_RRESP),  
-      .S_AXI_RVALID(S2_AXI_RVALID), 
-      .S_AXI_WREADY(S2_AXI_WREADY), 
+      .S_AXI_RVALID(), 
+      .S_AXI_WREADY(), 
       .S_AXI_BRESP(S2_AXI_BRESP),  
-      .S_AXI_BVALID(S2_AXI_BVALID), 
-      .S_AXI_AWREADY(S2_AXI_AWREADY),
+      .S_AXI_BVALID(), 
+      .S_AXI_AWREADY(),
       .S_AXI_ACLK (axi_aclk), 
       .S_AXI_ARESETN(axi_resetn)
     ); 
@@ -585,14 +599,14 @@ module nf_datapath #(
       .S_AXI_ARADDR(S0_AXI_ARADDR), 
       .S_AXI_ARVALID(S0_AXI_ARVALID),
       .S_AXI_RREADY(S0_AXI_RREADY), 
-      .S_AXI_ARREADY(S0_AXI_ARREADY),
-      .S_AXI_RDATA(S0_AXI_RDATA),  
-      .S_AXI_RRESP(S0_AXI_RRESP),  
-      .S_AXI_RVALID(S0_AXI_RVALID), 
-      .S_AXI_WREADY(S0_AXI_WREADY), 
-      .S_AXI_BRESP(S0_AXI_BRESP),  
-      .S_AXI_BVALID(S0_AXI_BVALID), 
-      .S_AXI_AWREADY(S0_AXI_AWREADY),
+      .S_AXI_ARREADY(),
+      .S_AXI_RDATA(),  
+      .S_AXI_RRESP(),  
+      .S_AXI_RVALID(), 
+      .S_AXI_WREADY(), 
+      .S_AXI_BRESP(),  
+      .S_AXI_BVALID(), 
+      .S_AXI_AWREADY(),
       .S_AXI_ACLK (axi_aclk), 
       .S_AXI_ARESETN(axi_resetn),
       .pkt_fwd() 
@@ -632,14 +646,14 @@ module nf_datapath #(
       .S_AXI_ARADDR(S0_AXI_ARADDR), 
       .S_AXI_ARVALID(S0_AXI_ARVALID),
       .S_AXI_RREADY(S0_AXI_RREADY), 
-      .S_AXI_ARREADY(S0_AXI_ARREADY),
-      .S_AXI_RDATA(S0_AXI_RDATA),  
-      .S_AXI_RRESP(S0_AXI_RRESP),  
-      .S_AXI_RVALID(S0_AXI_RVALID), 
-      .S_AXI_WREADY(S0_AXI_WREADY), 
-      .S_AXI_BRESP(S0_AXI_BRESP),  
-      .S_AXI_BVALID(S0_AXI_BVALID), 
-      .S_AXI_AWREADY(S0_AXI_AWREADY),
+      .S_AXI_ARREADY(),
+      .S_AXI_RDATA(),  
+      .S_AXI_RRESP(),  
+      .S_AXI_RVALID(), 
+      .S_AXI_WREADY(), 
+      .S_AXI_BRESP(),  
+      .S_AXI_BVALID(), 
+      .S_AXI_AWREADY(),
       .S_AXI_ACLK (axi_aclk), 
       .S_AXI_ARESETN(axi_resetn),
       .pkt_fwd() 
@@ -677,14 +691,14 @@ module nf_datapath #(
       .S_AXI_ARADDR(S0_AXI_ARADDR), 
       .S_AXI_ARVALID(S0_AXI_ARVALID),
       .S_AXI_RREADY(S0_AXI_RREADY), 
-      .S_AXI_ARREADY(S0_AXI_ARREADY),
-      .S_AXI_RDATA(S0_AXI_RDATA),  
-      .S_AXI_RRESP(S0_AXI_RRESP),  
-      .S_AXI_RVALID(S0_AXI_RVALID), 
-      .S_AXI_WREADY(S0_AXI_WREADY), 
-      .S_AXI_BRESP(S0_AXI_BRESP),  
-      .S_AXI_BVALID(S0_AXI_BVALID), 
-      .S_AXI_AWREADY(S0_AXI_AWREADY),
+      .S_AXI_ARREADY(),
+      .S_AXI_RDATA(),  
+      .S_AXI_RRESP(),  
+      .S_AXI_RVALID(), 
+      .S_AXI_WREADY(), 
+      .S_AXI_BRESP(),  
+      .S_AXI_BVALID(), 
+      .S_AXI_AWREADY(),
       .S_AXI_ACLK (axi_aclk), 
       .S_AXI_ARESETN(axi_resetn),
       .pkt_fwd() 
@@ -722,14 +736,14 @@ module nf_datapath #(
       .S_AXI_ARADDR(S0_AXI_ARADDR), 
       .S_AXI_ARVALID(S0_AXI_ARVALID),
       .S_AXI_RREADY(S0_AXI_RREADY), 
-      .S_AXI_ARREADY(S0_AXI_ARREADY),
-      .S_AXI_RDATA(S0_AXI_RDATA),  
-      .S_AXI_RRESP(S0_AXI_RRESP),  
-      .S_AXI_RVALID(S0_AXI_RVALID), 
-      .S_AXI_WREADY(S0_AXI_WREADY), 
-      .S_AXI_BRESP(S0_AXI_BRESP),  
-      .S_AXI_BVALID(S0_AXI_BVALID), 
-      .S_AXI_AWREADY(S0_AXI_AWREADY),
+      .S_AXI_ARREADY(),
+      .S_AXI_RDATA(),  
+      .S_AXI_RRESP(),  
+      .S_AXI_RVALID(), 
+      .S_AXI_WREADY(), 
+      .S_AXI_BRESP(),  
+      .S_AXI_BVALID(), 
+      .S_AXI_AWREADY(),
       .S_AXI_ACLK (axi_aclk), 
       .S_AXI_ARESETN(axi_resetn),
       .pkt_fwd() 

@@ -65,7 +65,8 @@ module sss_cache_queues
     parameter C_M_AXIS_DATA_WIDTH=256,
     parameter C_S_AXIS_DATA_WIDTH=256,
     parameter C_M_AXIS_TUSER_WIDTH=128,
-    parameter C_S_AXIS_TUSER_WIDTH=128,
+    //parameter C_S_AXIS_TUSER_WIDTH=128,
+    parameter C_S_AXIS_TUSER_WIDTH=304,
     parameter NUM_QUEUES=5,
 
     // AXI Registers Data Width
@@ -220,66 +221,64 @@ module sss_cache_queues
     */
 
     /* digest data format:
-    *  Make sure that the number of queues is defined as 5 and not as 8 (from the top / tcl), otherwise change the mapping
+    * Make sure that the number of queues is defined as 5 and not as 8 (from the top / tcl), otherwise change the mapping
     *  [55:48]   cache_write; // encoded:  {0, 0, 0, DMA, NF3, NF2, NF1, NF0}
     *  [63:56]   cache_read;  // encoded:  {0, 0, 0, DMA, NF3, NF2, NF1, NF0}
     *  [71:64]   cache_drop;  // encoded:  {0, 0, 0, DMA, NF3, NF2, NF1, NF0}
     *  [79:72]   cache_count; // number of packets to read or drop;
     */
 
-    // SI
-	localparam DROP_POS = 32; 
-	(* mark_debug = "true" *) wire should_drop = s_axis_tuser[DROP_POS]; 
+   // SI
 
-    reg [NUM_QUEUES-1:0]                nearly_full;
-    wire [NUM_QUEUES-1:0]               nearly_full_fifo;
-    wire [NUM_QUEUES-1:0]               empty;
+   reg [NUM_QUEUES-1:0]                nearly_full;
+   wire [NUM_QUEUES-1:0]               nearly_full_fifo;
+   wire [NUM_QUEUES-1:0]               empty;
 
-    reg [NUM_QUEUES-1:0]                metadata_nearly_full;
-    wire [NUM_QUEUES-1:0]               metadata_nearly_full_fifo;
-    wire [NUM_QUEUES-1:0]               metadata_empty;
+   reg [NUM_QUEUES-1:0]                metadata_nearly_full;
+   wire [NUM_QUEUES-1:0]               metadata_nearly_full_fifo;
+   wire [NUM_QUEUES-1:0]               metadata_empty;
 
-    wire [C_M_AXIS_TUSER_WIDTH-1:0]             fifo_out_tuser[NUM_QUEUES-1:0];
-    wire [C_M_AXIS_DATA_WIDTH-1:0]        fifo_out_tdata[NUM_QUEUES-1:0];
-    wire [((C_M_AXIS_DATA_WIDTH/8))-1:0]  fifo_out_tkeep[NUM_QUEUES-1:0];
-    wire [NUM_QUEUES-1:0] 	           fifo_out_tlast;
+   wire [C_M_AXIS_TUSER_WIDTH-1:0]             fifo_out_tuser[NUM_QUEUES-1:0];
+   wire [C_M_AXIS_DATA_WIDTH-1:0]        fifo_out_tdata[NUM_QUEUES-1:0];
+   wire [((C_M_AXIS_DATA_WIDTH/8))-1:0]  fifo_out_tkeep[NUM_QUEUES-1:0];
+   wire [NUM_QUEUES-1:0] 	           fifo_out_tlast;
 
-    wire [NUM_QUEUES-1:0]               rd_en;
-    reg [NUM_QUEUES-1:0]                wr_en;
+   wire [NUM_QUEUES-1:0]               rd_en;
+   reg [NUM_QUEUES-1:0]                wr_en;
 
-    reg [NUM_QUEUES-1:0]                metadata_rd_en;
-    reg [NUM_QUEUES-1:0]                metadata_wr_en;
+   reg [NUM_QUEUES-1:0]                metadata_rd_en;
+   reg [NUM_QUEUES-1:0]                metadata_wr_en;
 
-    reg [NUM_QUEUES-1:0]          cur_queue;
-    reg [NUM_QUEUES-1:0]          cur_queue_next;
-    reg [NUM_QUEUES-1:0]         oq;
+   reg [NUM_QUEUES-1:0]          cur_queue;
+   reg [NUM_QUEUES-1:0]          cur_queue_next;
+   reg [NUM_QUEUES-1:0]          oq;
 
-    reg [NUM_STATES-1:0]                state;
-    reg [NUM_STATES-1:0]                state_next;
+   reg [NUM_STATES-1:0]                state;
+   reg [NUM_STATES-1:0]                state_next;
 
-    reg [NUM_METADATA_STATES-1:0]       metadata_state[NUM_QUEUES-1:0];
-    reg [NUM_METADATA_STATES-1:0]       metadata_state_next[NUM_QUEUES-1:0];
+   reg [NUM_METADATA_STATES-1:0]       metadata_state[NUM_QUEUES-1:0];
+   reg [NUM_METADATA_STATES-1:0]       metadata_state_next[NUM_QUEUES-1:0];
 
-    reg                                                             first_word, first_word_next;
+   reg                                                             first_word, first_word_next;
 
-    reg [NUM_QUEUES-1:0] pkt_stored_next;
-    reg [C_S_AXI_DATA_WIDTH-1:0] bytes_stored_next;
-    reg [NUM_QUEUES-1:0] pkt_dropped_next;
-    reg [C_S_AXI_DATA_WIDTH-1:0] bytes_dropped_next;
-    reg [NUM_QUEUES-1:0] pkt_removed;
-    reg [C_S_AXI_DATA_WIDTH-1:0] bytes_removed[NUM_QUEUES-1:0];
+   reg [NUM_QUEUES-1:0] pkt_stored_next;
+   reg [C_S_AXI_DATA_WIDTH-1:0] bytes_stored_next;
+   reg [NUM_QUEUES-1:0] pkt_dropped_next;
+   reg [C_S_AXI_DATA_WIDTH-1:0] bytes_dropped_next;
+   reg [NUM_QUEUES-1:0] pkt_removed;
+   reg [C_S_AXI_DATA_WIDTH-1:0] bytes_removed[NUM_QUEUES-1:0];
 
-    reg      [`REG_ID_BITS]    id_reg;
-    reg      [`REG_VERSION_BITS]    version_reg;
-    wire     [`REG_RESET_BITS]    reset_reg;
-    reg      [`REG_FLIP_BITS]    ip2cpu_flip_reg;
-    wire     [`REG_FLIP_BITS]    cpu2ip_flip_reg;
-    reg      [`REG_PKTIN_BITS]    pktin_reg;
-    wire                             pktin_reg_clear;
-    reg      [`REG_PKTOUT_BITS]    pktout_reg;
-    wire                             pktout_reg_clear;
-    reg      [`REG_DEBUG_BITS]    ip2cpu_debug_reg;
-    wire     [`REG_DEBUG_BITS]    cpu2ip_debug_reg;
+   reg      [`REG_ID_BITS]    id_reg;
+   reg      [`REG_VERSION_BITS]    version_reg;
+   wire     [`REG_RESET_BITS]    reset_reg;
+   reg      [`REG_FLIP_BITS]    ip2cpu_flip_reg;
+   wire     [`REG_FLIP_BITS]    cpu2ip_flip_reg;
+   reg      [`REG_PKTIN_BITS]    pktin_reg;
+   wire                             pktin_reg_clear;
+   reg      [`REG_PKTOUT_BITS]    pktout_reg;
+   wire                             pktout_reg_clear;
+   reg      [`REG_DEBUG_BITS]    ip2cpu_debug_reg;
+   wire     [`REG_DEBUG_BITS]    cpu2ip_debug_reg;
 
     reg      [`REG_PKTSTOREDPORT0_BITS]    pktstoredport0_reg;
     wire                             pktstoredport0_reg_clear;
@@ -352,77 +351,57 @@ module sss_cache_queues
     reg      [`REG_PKTINQUEUEPORT4_BITS]    pktinqueueport4_reg;
     wire                             pktinqueueport4_reg_clear;
 
-    wire clear_counters;
-    wire reset_registers;
+   wire clear_counters;
+   wire reset_registers;
 
-    // ------------ SSS additions -------------
+   // ------------ SSS additions -------------
 
-    localparam DIGEST_WIDTH = 80;
-    (* mark_debug = "true" *) wire send_dig_to_cpu;
-    (* mark_debug = "true" *) wire [DIGEST_WIDTH-1:0] digest_data;
+   localparam DIGEST_WIDTH = 256;
+   reg send_dig_to_cpu;
+   reg [DIGEST_WIDTH-1:0] digest_data;
 
-    wire [C_S_AXIS_DATA_WIDTH/8 + C_S_AXIS_DATA_WIDTH:0] data_queue_in[NUM_QUEUES-1:0];
-    (* mark_debug = "true" *) wire [NUM_QUEUES-1:0] data_queue_wr_en;
-    wire [C_S_AXIS_TUSER_WIDTH-1:0] metadata_queue_in[NUM_QUEUES-1:0];
-    (* mark_debug = "true" *) wire [NUM_QUEUES-1:0] metadata_queue_wr_en;
-    wire [BUFFER_SIZE_WIDTH:0] data_queue_depth[NUM_QUEUES-1:0];
+   reg [C_S_AXIS_DATA_WIDTH/8 + C_S_AXIS_DATA_WIDTH:0] data_queue_in[NUM_QUEUES-1:0];
+   reg [C_M_AXIS_TUSER_WIDTH-1:0] metadata_queue_in[NUM_QUEUES-1:0];
 
-    reg [15:0] digest_len;
+   wire [NUM_QUEUES-1:0] data_queue_wr_en;
+   wire [NUM_QUEUES-1:0] metadata_queue_wr_en;
 
-    //-------------Cache additions ---------------
+   wire [BUFFER_SIZE_WIDTH:0] data_queue_depth[NUM_QUEUES-1:0];
 
-    wire [7:0]   cache_write; // one-hot encoded:  {0, 0, 0, DMA, NF3, NF2, NF1, NF0}
-    wire [7:0]   cache_read;  // one-hot encoded:  {0, 0, 0, DMA, NF3, NF2, NF1, NF0}
-    wire [7:0]   cache_drop;  // one-hot encoded:  {0, 0, 0, DMA, NF3, NF2, NF1, NF0}
-    wire [7:0]   cache_count; // number of packets to read or drop;
+   reg [15:0] digest_len;
 
-    reg [7:0]   reg_cache_read;  // one-hot encoded:  {0, 0, 0, DMA, NF3, NF2, NF1, NF0}
-    reg [7:0]   reg_cache_drop;  // one-hot encoded:  {0, 0, 0, DMA, NF3, NF2, NF1, NF0}
-    reg [63:0]   reg_cache_count; // number of packets to read or drop, 8 bits per queue;
+   //-------------Cache additions ---------------
    
+   wire [7:0]   cache_write; // one-hot encoded:  {0, 0, 0, DMA, NF3, NF2, NF1, NF0}
+   wire [7:0]   cache_read;  // one-hot encoded:  {0, 0, 0, DMA, NF3, NF2, NF1, NF0}
+   wire [7:0]   cache_drop;  // one-hot encoded:  {0, 0, 0, DMA, NF3, NF2, NF1, NF0}
+   wire [7:0]   cache_count; // number of packets to read or drop;
 
-    // ------------ Modules -------------
+   reg [NUM_QUEUES-1:0]   reg_cache_read;   // one-hot encoded:  {0, 0, 0, DMA, NF3, NF2, NF1, NF0}
+   reg [NUM_QUEUES-1:0]   reg_cache_drop;   // one-hot encoded:  {0, 0, 0, DMA, NF3, NF2, NF1, NF0}
+   reg [NUM_QUEUES*8-1:0]   reg_cache_count; // number of packets to read or drop, 8 bits per queue;
 
-    localparam SEND_DIG_POS = 40; 
-    assign send_dig_to_cpu = s_axis_tuser[SEND_DIG_POS];
-    assign digest_data = s_axis_tuser[C_S_AXIS_TUSER_WIDTH-1:48];
+   // ------------ Modules -------------
 
-    assign  cache_write = s_axis_tuser[55:48];
-    assign  cache_read  = s_axis_tuser[63:56];
-    assign  cache_drop  = s_axis_tuser[71:64];
-    assign  cache_count = s_axis_tuser[79:72];
-    
-    generate
-    genvar i;
-    for(i=0; i<NUM_QUEUES; i=i+1) begin: sss_cache_queues
+   assign  cache_write = s_axis_tuser[55:48];
+   assign  cache_read  = s_axis_tuser[63:56];
+   assign  cache_drop  = s_axis_tuser[71:64];
+   assign  cache_count = s_axis_tuser[79:72];
+                           
+   generate
+   genvar i;
+   for(i=0; i<NUM_QUEUES; i=i+1) begin: sss_cache_queues
 
-    /*
-        We want to send the digest_data over DMA if the send_dig_to_cpu bit is set
-        otherwise use the packet itself will be sent over DMA if the output queue
-        field specifies one of the DMA queues.
+      /*
+        If the dst_port field specifies that the pkt should be sent over DMA then 
+        we want to prepend the digest data to the packet when it is sent.
 
-        If send_dig_to_cpu == 1'b1 then that digest data is actually written a clock cycle
-        early (i.e. when state == IDLE). 
-    */
-    assign data_queue_in[i] = ((i == NUM_QUEUES-1) & send_dig_to_cpu) ? 
-                            {1'b1, 
-                            {{(C_S_AXIS_DATA_WIDTH/8 - DIGEST_WIDTH/8){1'b0}}, 
-                            {(DIGEST_WIDTH/8){1'b1}}} , {{(C_S_AXIS_DATA_WIDTH - DIGEST_WIDTH){1'b0}}, digest_data}} : 
-                            {s_axis_tlast, 
-                            s_axis_tkeep, 
-                            s_axis_tdata};
-
-    assign data_queue_wr_en[i] = ((i == NUM_QUEUES-1) & send_dig_to_cpu) ?
-                                (s_axis_tvalid & ((state == IDLE)) ? cache_write[i] : 1'b0) : // only write on the first word of the packet
-                                (s_axis_tvalid & cache_write[i] & wr_en[i]);
-
-    assign metadata_queue_in[i] = ((i == NUM_QUEUES-1) & send_dig_to_cpu) ?
-                                {96'b0, 8'b0000_0010, 8'b0, 16'd10} :
-                                s_axis_tuser;  
-
-    assign metadata_queue_wr_en[i] = ((i == NUM_QUEUES-1) & send_dig_to_cpu) ?
-                                    (s_axis_tvalid & ((state == IDLE)) ? cache_write[i] : 1'b0) :
-                                    (s_axis_tvalid & cache_write[i] & metadata_wr_en[i]);
+        Else, if the send_dig_to_cpu bit is set then we want to send only the digest_data
+        over DMA. When this happens, the digest data is actually written a clock cycle
+        early (i.e. when state == IDLE).
+       */
+    assign data_queue_wr_en[i] = cache_write[i] & wr_en[i]; 
+    assign metadata_queue_wr_en[i] = cache_write[i] & metadata_wr_en[i];
 
       sss_fallthrough_small_fifo
         #( .WIDTH(C_M_AXIS_DATA_WIDTH+C_M_AXIS_DATA_WIDTH/8+1),
@@ -507,17 +486,20 @@ module sss_cache_queues
           reg_cache_drop[i] <= (s_axis_tvalid & cache_drop[i]) | ((reg_cache_count[(i+1)*8-1:i*8] >0) & reg_cache_drop[i]) ;
           reg_cache_count[(i+1)*8-1:i*8] <= (s_axis_tvalid & (cache_read[i] | cache_drop[i])) ? 
           			reg_cache_count[(i+1)*8-1:i*8] + cache_count :
-          			(((metadata_state[i] == WAIT_EOP) & rd_en[i] & fifo_out_tlast[i] & 
-          			(|reg_cache_count[(i+1)*8-1:i*8])) ? reg_cache_count[(i+1)*8-1:i*8]-1 : reg_cache_count[(i+1)*8-1:i*8]); 
-        end
-      end  // added
-   end 
+          			(metadata_state[i] == WAIT_EOP) & rd_en[i] & fifo_out_tlast[i] & 
+          			(|reg_cache_count[(i+1)*8-1:i*8]) ? reg_cache_count[(i+1)*8-1:i*8]-1 : reg_cache_count[(i+1)*8-1:i*8]; 
+        end    
+      end
+      
+   end
    endgenerate
 
    // Per NetFPGA-10G AXI Spec
    localparam DST_POS = 24;
-   
+   localparam SEND_DIG_POS = 40; 
    always @(*) begin
+       send_dig_to_cpu = s_axis_tuser[SEND_DIG_POS];
+       digest_data = s_axis_tuser[C_S_AXIS_TUSER_WIDTH-1:48];
        oq = s_axis_tuser[DST_POS] |
            (s_axis_tuser[DST_POS + 2] << 1) |
            (s_axis_tuser[DST_POS + 4] << 2) |
@@ -528,9 +510,6 @@ module sss_cache_queues
    end
 
    // SI
-   (* mark_debug = "true" *) wire dropping_pkt = ~( ~|((nearly_full | metadata_nearly_full) & oq) && ~should_drop );
-   reg [31:0] drop_count;
-   (* mark_debug = "true" *) wire [31:0] drop_count_debug = drop_count;
 
    integer j;
 
@@ -538,7 +517,9 @@ module sss_cache_queues
       state_next     = state;
       cur_queue_next = cur_queue;
       wr_en          = 0;
+      //data_queue_wr_en = 0;
       metadata_wr_en = 0;
+      //metadata_queue_wr_en = 0;
       s_axis_tready  = 0;
       first_word_next = first_word;
 
@@ -548,10 +529,10 @@ module sss_cache_queues
       bytes_dropped_next = 0;
 
       // default inputs to queues
-//       for (j=0; j < NUM_QUEUES; j=j+1) begin
-//           data_queue_in[j] = {s_axis_tlast, s_axis_tkeep, s_axis_tdata};
-//           metadata_queue_in[j] = s_axis_tuser[C_M_AXIS_TUSER_WIDTH-1:0]; // trim digest_data to 80bits
-//       end
+      for (j=0; j < NUM_QUEUES; j=j+1) begin
+          data_queue_in[j] = {s_axis_tlast, s_axis_tkeep, s_axis_tdata};
+          metadata_queue_in[j] = s_axis_tuser[C_M_AXIS_TUSER_WIDTH-1:0]; // trim digest_data to 80bits
+      end
 
       case(state)
 
@@ -559,7 +540,7 @@ module sss_cache_queues
         IDLE: begin
            cur_queue_next = oq;
            if(s_axis_tvalid) begin
-              if(~|((nearly_full | metadata_nearly_full) & oq) && ~should_drop ) begin // All interesting oqs are NOT _nearly_ full (able to fit in the maximum packet).
+              if(~|((nearly_full | metadata_nearly_full) & oq)) begin // All interesting oqs are NOT _nearly_ full (able to fit in the maximum packet).
                   state_next = WR_PKT;
                   first_word_next = 1'b1;
 		  pkt_stored_next = oq;
@@ -568,19 +549,19 @@ module sss_cache_queues
                   if (oq[DMA_QUEUE] == 1) begin
                       // We are sending the pkt over DMA so prepend the digest data to the pkt
                       wr_en[DMA_QUEUE] = send_dig_to_cpu;
-                //       data_queue_in[DMA_QUEUE] = {1'b0, {(DIGEST_WIDTH/8){1'b1}} , digest_data};
+                      data_queue_in[DMA_QUEUE] = {1'b0, {(DIGEST_WIDTH/8){1'b1}} , digest_data};
                       metadata_wr_en[DMA_QUEUE] = 1;
-                //       if (send_dig_to_cpu)
-                //           metadata_queue_in[DMA_QUEUE] = {s_axis_tuser[C_M_AXIS_TUSER_WIDTH-1:16], s_axis_tuser[15:0] + digest_len};
-                //       else
-                //           metadata_queue_in[DMA_QUEUE] = {s_axis_tuser[C_M_AXIS_TUSER_WIDTH-1:16], s_axis_tuser[15:0]};
+                      if (send_dig_to_cpu)
+                          metadata_queue_in[DMA_QUEUE] = {s_axis_tuser[C_M_AXIS_TUSER_WIDTH-1:16], s_axis_tuser[15:0] + digest_len};
+                      else
+                          metadata_queue_in[DMA_QUEUE] = {s_axis_tuser[C_M_AXIS_TUSER_WIDTH-1:16], s_axis_tuser[15:0]};
                   end
                   else if (send_dig_to_cpu) begin
                       // We just want to send the digest data over DMA
                       wr_en[DMA_QUEUE] = 1;
-                //       data_queue_in[DMA_QUEUE] = {1'b1, {(DIGEST_WIDTH/8){1'b1}} , digest_data};
+                      data_queue_in[DMA_QUEUE] = {1'b1, {(DIGEST_WIDTH/8){1'b1}} , digest_data};
                       metadata_wr_en[DMA_QUEUE] = 1;
-                //       metadata_queue_in[DMA_QUEUE] = {96'b0, 8'b0000_0010, 8'b0, digest_len};
+                      metadata_queue_in[DMA_QUEUE] = {96'b0, 8'b0000_0010, 8'b0, digest_len};
                   end
               end
               else begin
@@ -634,7 +615,7 @@ module sss_cache_queues
          nf2_q_size <= 0;
          nf3_q_size <= 0;
          dma_q_size <= 0;
-         drop_count <= 0;
+
       end
       else begin
          state <= state_next;
@@ -645,15 +626,12 @@ module sss_cache_queues
          pkt_stored <= pkt_stored_next;
          pkt_dropped<= pkt_dropped_next;
          bytes_dropped<= bytes_dropped_next;
-         nf0_q_size <= {'b0, data_queue_depth[0]};
-         nf1_q_size <= {'b0, data_queue_depth[1]};
-         nf2_q_size <= {'b0, data_queue_depth[2]};
-         nf3_q_size <= {'b0, data_queue_depth[3]};
-         dma_q_size <= {'b0, data_queue_depth[4]};
-         // SI: count total drops
-         if (state == IDLE && state_next == DROP) begin
-             drop_count <= drop_count + 'd1;
-         end
+         nf0_q_size <= {{(QUEUE_DEPTH_BITS-BUFFER_SIZE_WIDTH+1){1'b0}}, data_queue_depth[0]};
+         nf1_q_size <= {{(QUEUE_DEPTH_BITS-BUFFER_SIZE_WIDTH+1){1'b0}}, data_queue_depth[1]};
+         nf2_q_size <= {{(QUEUE_DEPTH_BITS-BUFFER_SIZE_WIDTH+1){1'b0}}, data_queue_depth[2]};
+         nf3_q_size <= {{(QUEUE_DEPTH_BITS-BUFFER_SIZE_WIDTH+1){1'b0}}, data_queue_depth[3]};
+         dma_q_size <= {{(QUEUE_DEPTH_BITS-BUFFER_SIZE_WIDTH+1){1'b0}}, data_queue_depth[4]};
+
       end
 
       nearly_full <= nearly_full_fifo;
@@ -673,8 +651,8 @@ module sss_cache_queues
    assign m_axis_1_tdata	 = fifo_out_tdata[1];
    assign m_axis_1_tkeep	 = fifo_out_tkeep[1];
    assign m_axis_1_tuser	 = fifo_out_tuser[1];
-   assign m_axis_1_tlast	 = fifo_out_tlast[1]; 
-   assign m_axis_1_tvalid	 = ~empty[1] & cache_read[1]; 
+   assign m_axis_1_tlast	 = fifo_out_tlast[1];
+   assign m_axis_1_tvalid	 = ~empty[1] & reg_cache_read[1];
    assign rd_en[1]		 = m_axis_1_tready & ~empty[1] & (reg_cache_read[1] | reg_cache_drop[1]);
    assign pkt_removed_1          = pkt_removed[1];
    assign bytes_removed_1          = bytes_removed[1];
@@ -706,7 +684,7 @@ module sss_cache_queues
    assign pkt_removed_4          = pkt_removed[4];
    assign bytes_removed_4          = bytes_removed[4];
 
-// Registers section
+//Registers section
 sss_cache_queues_cpu_regs 
  #(
      .C_BASE_ADDRESS        (C_BASEADDR),
