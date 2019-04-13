@@ -1,5 +1,6 @@
 //-
 // Copyright (c) 2015 Noa Zilberman
+// Copyright (c) 2019 Stephen Ibanez
 // All rights reserved.
 //
 // This software was developed by Stanford University and the University of Cambridge Computer Laboratory 
@@ -14,7 +15,9 @@
 //  Module:
 //        top
 //
-//  Author: Noa Zilberman
+//  Author:
+//         Noa Zilberman
+//         Modified by Stephen Ibanez
 //
 //  Description:
 //        reference switch top module
@@ -149,12 +152,12 @@
  wire[(C_DATA_WIDTH/8)-1:0]       axis_i_0_tkeep;
  wire            axis_i_0_tready;
 
-(* mark_debug = "true" *) wire[C_DATA_WIDTH-1:0]      axis_o_0_tdata;
-(* mark_debug = "true" *) wire            axis_o_0_tvalid;
-(* mark_debug = "true" *) wire            axis_o_0_tlast;
-(* mark_debug = "true" *) wire [C_TUSER_WIDTH-1:0]         axis_o_0_tuser;
-(* mark_debug = "true" *) wire[(C_DATA_WIDTH/8)-1:0]       axis_o_0_tkeep;
-(* mark_debug = "true" *) wire            axis_o_0_tready;
+ wire[C_DATA_WIDTH-1:0]      axis_o_0_tdata;
+ wire            axis_o_0_tvalid;
+ wire            axis_o_0_tlast;
+ wire [C_TUSER_WIDTH-1:0]         axis_o_0_tuser;
+ wire[(C_DATA_WIDTH/8)-1:0]       axis_o_0_tkeep;
+ wire            axis_o_0_tready;
 
   wire[C_DATA_WIDTH-1:0]      axis_i_1_tdata;
   wire            axis_i_1_tvalid;
@@ -163,12 +166,12 @@
   wire[C_DATA_WIDTH/8-1:0]       axis_i_1_tkeep;
   wire            axis_i_1_tready;
 
- (* mark_debug = "true" *)  wire[C_DATA_WIDTH-1:0]      axis_o_1_tdata;
- (* mark_debug = "true" *)  wire            axis_o_1_tvalid;
- (* mark_debug = "true" *)  wire            axis_o_1_tlast;
- (* mark_debug = "true" *)  wire [C_TUSER_WIDTH-1:0]           axis_o_1_tuser;
- (* mark_debug = "true" *)  wire[C_DATA_WIDTH/8-1:0]       axis_o_1_tkeep;
- (* mark_debug = "true" *)  wire            axis_o_1_tready;
+  wire[C_DATA_WIDTH-1:0]      axis_o_1_tdata;
+  wire            axis_o_1_tvalid;
+  wire            axis_o_1_tlast;
+  wire [C_TUSER_WIDTH-1:0]           axis_o_1_tuser;
+  wire[C_DATA_WIDTH/8-1:0]       axis_o_1_tkeep;
+  wire            axis_o_1_tready;
 
   wire[C_DATA_WIDTH-1:0]      axis_i_2_tdata;
   wire            axis_i_2_tvalid;
@@ -177,12 +180,12 @@
   wire[C_DATA_WIDTH/8-1:0]       axis_i_2_tkeep;
   wire            axis_i_2_tready;
 
- (* mark_debug = "true" *)  wire[C_DATA_WIDTH-1:0]      axis_o_2_tdata;
- (* mark_debug = "true" *)  wire            axis_o_2_tvalid;
- (* mark_debug = "true" *)  wire            axis_o_2_tlast;
- (* mark_debug = "true" *)  wire [C_TUSER_WIDTH-1:0]         axis_o_2_tuser;
- (* mark_debug = "true" *)  wire[C_DATA_WIDTH/8-1:0]       axis_o_2_tkeep;
- (* mark_debug = "true" *)  wire            axis_o_2_tready;
+  wire[C_DATA_WIDTH-1:0]      axis_o_2_tdata;
+  wire            axis_o_2_tvalid;
+  wire            axis_o_2_tlast;
+  wire [C_TUSER_WIDTH-1:0]         axis_o_2_tuser;
+  wire[C_DATA_WIDTH/8-1:0]       axis_o_2_tkeep;
+  wire            axis_o_2_tready;
 
   wire[C_DATA_WIDTH-1:0]      axis_i_3_tdata;
   wire            axis_i_3_tvalid;
@@ -191,12 +194,12 @@
   wire[C_DATA_WIDTH/8-1:0]       axis_i_3_tkeep;
   wire            axis_i_3_tready;
 
- (* mark_debug = "true" *)  wire[C_DATA_WIDTH-1:0]      axis_o_3_tdata;
- (* mark_debug = "true" *)  wire            axis_o_3_tvalid;
- (* mark_debug = "true" *)  wire            axis_o_3_tlast;
- (* mark_debug = "true" *)  wire [C_TUSER_WIDTH-1:0]         axis_o_3_tuser;
- (* mark_debug = "true" *)  wire[C_DATA_WIDTH/8-1:0]       axis_o_3_tkeep;
- (* mark_debug = "true" *)  wire            axis_o_3_tready;
+  wire[C_DATA_WIDTH-1:0]      axis_o_3_tdata;
+  wire            axis_o_3_tvalid;
+  wire            axis_o_3_tlast;
+  wire [C_TUSER_WIDTH-1:0]         axis_o_3_tuser;
+  wire[C_DATA_WIDTH/8-1:0]       axis_o_3_tkeep;
+  wire            axis_o_3_tready;
 
   // AXIS DMA interfaces
   wire [255:0]   axis_dma_i_tdata ;
@@ -256,25 +259,25 @@
   wire [3:0]    M01_AXI_wstrb;
   wire [0:0]    M01_AXI_wvalid;
 
-  (* mark_debug = "true" *) wire [11:0]   M02_AXI_araddr;
-  (* mark_debug = "true" *) wire [2:0]    M02_AXI_arprot;
-  (* mark_debug = "true" *) wire [0:0]    M02_AXI_arready;
-  (* mark_debug = "true" *) wire [0:0]    M02_AXI_arvalid;
-  (* mark_debug = "true" *) wire [11:0]   M02_AXI_awaddr;
-  (* mark_debug = "true" *) wire [2:0]    M02_AXI_awprot;
-  (* mark_debug = "true" *) wire [0:0]    M02_AXI_awready;
-  (* mark_debug = "true" *) wire [0:0]    M02_AXI_awvalid;
-  (* mark_debug = "true" *) wire [0:0]    M02_AXI_bready;
-  (* mark_debug = "true" *) wire [1:0]    M02_AXI_bresp;
-  (* mark_debug = "true" *) wire [0:0]    M02_AXI_bvalid;
-  (* mark_debug = "true" *) wire [31:0]   M02_AXI_rdata;
-  (* mark_debug = "true" *) wire [0:0]    M02_AXI_rready;
-  (* mark_debug = "true" *) wire [1:0]    M02_AXI_rresp;
-  (* mark_debug = "true" *) wire [0:0]    M02_AXI_rvalid;
-  (* mark_debug = "true" *) wire [31:0]   M02_AXI_wdata;
-  (* mark_debug = "true" *) wire [0:0]    M02_AXI_wready;
-  (* mark_debug = "true" *) wire [3:0]    M02_AXI_wstrb;
-  (* mark_debug = "true" *) wire [0:0]    M02_AXI_wvalid;
+  wire [11:0]   M02_AXI_araddr;
+  wire [2:0]    M02_AXI_arprot;
+  wire [0:0]    M02_AXI_arready;
+  wire [0:0]    M02_AXI_arvalid;
+  wire [11:0]   M02_AXI_awaddr;
+  wire [2:0]    M02_AXI_awprot;
+  wire [0:0]    M02_AXI_awready;
+  wire [0:0]    M02_AXI_awvalid;
+  wire [0:0]    M02_AXI_bready;
+  wire [1:0]    M02_AXI_bresp;
+  wire [0:0]    M02_AXI_bvalid;
+  wire [31:0]   M02_AXI_rdata;
+  wire [0:0]    M02_AXI_rready;
+  wire [1:0]    M02_AXI_rresp;
+  wire [0:0]    M02_AXI_rvalid;
+  wire [31:0]   M02_AXI_wdata;
+  wire [0:0]    M02_AXI_wready;
+  wire [3:0]    M02_AXI_wstrb;
+  wire [0:0]    M02_AXI_wvalid;
   
   wire [11:0]   M03_AXI_araddr;
   wire [2:0]    M03_AXI_arprot;
@@ -432,7 +435,11 @@
   wire axis_resetn;
   wire axi_datapath_resetn;
   wire peripheral_reset;
-  
+
+  wire nf0_link_detect; 
+  wire nf1_link_detect; 
+  wire nf2_link_detect; 
+  wire nf3_link_detect; 
 
   // Assign interface numbers to ports
   // Odd bits are ports and even bits are DMA
@@ -551,22 +558,21 @@ assign axi_datapath_resetn = axis_resetn;
 // Network modules                                                                               //
 //-----------------------------------------------------------------------------------------------//
 
-nf_datapath 
+sume_event_arch
 #(
+    .C_S_AXI_ADDR_WIDTH (12),
     // Master AXI Stream Data Width
     .C_M_AXIS_DATA_WIDTH (C_DATA_WIDTH),
     .C_S_AXIS_DATA_WIDTH (C_DATA_WIDTH),
-    .C_S_AXI_ADDR_WIDTH (12),
     .C_M_AXIS_TUSER_WIDTH (128),
-    .C_S_AXIS_TUSER_WIDTH (128),
-    .NUM_QUEUES (5)
+    .C_S_AXIS_TUSER_WIDTH (128)
 )
-nf_datapath_0 
+sume_event_arch_0 
 (
     .axis_aclk                        (clk_200),
     .axis_resetn                      (axis_resetn),
-    .axi_aclk                        (clk_200),
-    .axi_resetn                      (axi_datapath_resetn),
+    .axi_aclk                         (clk_200),
+    .axi_resetn                       (axi_datapath_resetn),
     
     // Slave Stream Ports (interface from Rx queues)
     .s_axis_0_tdata                 (axis_i_0_tdata),  
@@ -687,7 +693,12 @@ nf_datapath_0
      .S2_AXI_WREADY                    (M03_AXI_wready), 
      .S2_AXI_BRESP                     (M03_AXI_bresp),  
      .S2_AXI_BVALID                    (M03_AXI_bvalid), 
-     .S2_AXI_AWREADY                   (M03_AXI_awready)
+     .S2_AXI_AWREADY                   (M03_AXI_awready),
+
+     .link_status                      ({nf3_link_detect,
+                                         nf2_link_detect,
+                                         nf1_link_detect,
+                                         nf0_link_detect})
     
     );
 
@@ -976,9 +987,11 @@ nf_10g_interface_shared_ip nf_10g_interface_0
         .rxp                         (sfp0_rx_p             ),
         .txn                         (sfp0_tx_n             ),
         .txp                         (sfp0_tx_p             ),
-        
+
+        .signal_detect               (nf0_link_detect       ), 
+
         //Interface number
-        .interface_number            (IF_SFP0                )        
+        .interface_number            (IF_SFP0                )
 
   );
   
@@ -1054,7 +1067,8 @@ nf_10g_interface_ip nf_10g_interface_1
         .txn              (sfp1_tx_n),               
         .rxp              (sfp1_rx_p),
         .rxn              (sfp1_rx_n),
-        
+
+        .signal_detect    (nf1_link_detect), 
                         
         //Interface number
         .interface_number (IF_SFP1)                       
@@ -1134,6 +1148,7 @@ nf_10g_interface_ip nf_10g_interface_2
         .rxp              (sfp2_rx_p),
         .rxn              (sfp2_rx_n),
         
+        .signal_detect    (nf2_link_detect), 
                         
         //Interface number
         .interface_number (IF_SFP2)                       
@@ -1213,7 +1228,8 @@ nf_10g_interface_ip nf_10g_interface_3
         .txn              (sfp3_tx_n),               
         .rxp              (sfp3_rx_p),
         .rxn              (sfp3_rx_n),
-        
+
+        .signal_detect    (nf3_link_detect), 
                         
         //Interface number
         .interface_number (IF_SFP3)                       

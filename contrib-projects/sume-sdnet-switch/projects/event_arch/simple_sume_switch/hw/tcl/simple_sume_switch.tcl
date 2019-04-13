@@ -1,5 +1,6 @@
 #
 # Copyright (c) 2015 Noa Zilberman
+# Copyright (c) 2019 Stephen Ibanez
 # All rights reserved.
 #
 # This software was developed by Stanford University and the University of Cambridge Computer Laboratory 
@@ -74,25 +75,25 @@ set_property constrset constraints [get_runs impl_1]
 # Project 
 #####################################
 update_ip_catalog
-create_ip -name input_arbiter_drr -vendor NetFPGA -library NetFPGA -module_name input_arbiter_drr_ip
-set_property generate_synth_checkpoint false [get_files input_arbiter_drr_ip.xci]
-reset_target all [get_ips input_arbiter_drr_ip]
-generate_target all [get_ips input_arbiter_drr_ip]
 
-create_ip -name sss_output_queues -vendor NetFPGA -library NetFPGA -module_name sss_output_queues_ip
-set_property generate_synth_checkpoint false [get_files sss_output_queues_ip.xci]
-reset_target all [get_ips sss_output_queues_ip]
-generate_target all [get_ips sss_output_queues_ip]
+#create_ip -name input_arbiter_drr -vendor NetFPGA -library NetFPGA -module_name input_arbiter_drr_ip
+#set_property generate_synth_checkpoint false [get_files input_arbiter_drr_ip.xci]
+#reset_target all [get_ips input_arbiter_drr_ip]
+#generate_target all [get_ips input_arbiter_drr_ip]
+
+#create_ip -name sss_output_queues -vendor NetFPGA -library NetFPGA -module_name sss_output_queues_ip
+#set_property generate_synth_checkpoint false [get_files sss_output_queues_ip.xci]
+#reset_target all [get_ips sss_output_queues_ip]
+#generate_target all [get_ips sss_output_queues_ip]
 
 
 #create the IPI Block Diagram
 source ./tcl/control_sub.tcl
 
-#source ../hw/create_ip/nf_sume_sdnet.tcl   # only need this if sdnet_to_sume has fifo in wrapper
-create_ip -name nf_sume_sdnet -vendor NetFPGA -library NetFPGA -module_name nf_sume_sdnet_ip
-set_property generate_synth_checkpoint false [get_files nf_sume_sdnet_ip.xci]
-reset_target all [get_ips nf_sume_sdnet_ip]
-generate_target all [get_ips nf_sume_sdnet_ip]
+#create_ip -name nf_sume_sdnet -vendor NetFPGA -library NetFPGA -module_name nf_sume_sdnet_ip
+#set_property generate_synth_checkpoint false [get_files nf_sume_sdnet_ip.xci]
+#reset_target all [get_ips nf_sume_sdnet_ip]
+#generate_target all [get_ips nf_sume_sdnet_ip]
 
 source ./create_ip/nf_10ge_interface.tcl
 create_ip -name nf_10ge_interface -vendor NetFPGA -library NetFPGA -module_name nf_10g_interface_ip
@@ -130,9 +131,14 @@ reset_target all [get_ips identifier_ip]
 generate_target all [get_ips identifier_ip]
 
 
-
 read_verilog "./hdl/axi_clocking.v"
-read_verilog "./hdl/nf_datapath.v"
+read_verilog "./hdl/axis_pkt_generator.v"
+read_verilog "./hdl/input_arbiter.v"
+read_verilog "./hdl/timer_module.v"
+read_verilog "./hdl/event_merger.v"
+read_verilog "./hdl/XilinxSwitch_dummy.v"
+read_verilog "./hdl/event_output_queues.v"
+read_verilog "./hdl/sume_event_switch.v"
 read_verilog "./hdl/top.v"
 
 

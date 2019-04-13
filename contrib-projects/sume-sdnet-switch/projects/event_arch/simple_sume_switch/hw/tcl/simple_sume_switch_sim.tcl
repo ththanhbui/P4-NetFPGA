@@ -65,23 +65,23 @@ set_property is_enabled true [get_files ${bit_settings}]
 set_property is_enabled true [get_files ${project_constraints}]
 
 update_ip_catalog
-#source ../hw/create_ip/nf_sume_sdnet.tcl  # only need this if have sdnet_to_sume fifo in wrapper
-create_ip -name nf_sume_sdnet -vendor NetFPGA -library NetFPGA -module_name nf_sume_sdnet_ip
-set_property generate_synth_checkpoint false [get_files nf_sume_sdnet_ip.xci]
-reset_target all [get_ips nf_sume_sdnet_ip]
-generate_target all [get_ips nf_sume_sdnet_ip]
 
-create_ip -name input_arbiter_drr -vendor NetFPGA -library NetFPGA -module_name input_arbiter_drr_ip
-set_property -dict [list CONFIG.C_BASEADDR $INPUT_ARBITER_BASEADDR] [get_ips input_arbiter_drr_ip]
-set_property generate_synth_checkpoint false [get_files input_arbiter_drr_ip.xci]
-reset_target all [get_ips input_arbiter_drr_ip]
-generate_target all [get_ips input_arbiter_drr_ip]
+#create_ip -name nf_sume_sdnet -vendor NetFPGA -library NetFPGA -module_name nf_sume_sdnet_ip
+#set_property generate_synth_checkpoint false [get_files nf_sume_sdnet_ip.xci]
+#reset_target all [get_ips nf_sume_sdnet_ip]
+#generate_target all [get_ips nf_sume_sdnet_ip]
 
-create_ip -name sss_output_queues -vendor NetFPGA -library NetFPGA -module_name sss_output_queues_ip
-set_property -dict [list CONFIG.C_BASEADDR $OUTPUT_QUEUES_BASEADDR] [get_ips sss_output_queues_ip]
-set_property generate_synth_checkpoint false [get_files sss_output_queues_ip.xci]
-reset_target all [get_ips sss_output_queues_ip]
-generate_target all [get_ips sss_output_queues_ip]
+#create_ip -name input_arbiter_drr -vendor NetFPGA -library NetFPGA -module_name input_arbiter_drr_ip
+#set_property -dict [list CONFIG.C_BASEADDR $INPUT_ARBITER_BASEADDR] [get_ips input_arbiter_drr_ip]
+#set_property generate_synth_checkpoint false [get_files input_arbiter_drr_ip.xci]
+#reset_target all [get_ips input_arbiter_drr_ip]
+#generate_target all [get_ips input_arbiter_drr_ip]
+
+#create_ip -name sss_output_queues -vendor NetFPGA -library NetFPGA -module_name sss_output_queues_ip
+#set_property -dict [list CONFIG.C_BASEADDR $OUTPUT_QUEUES_BASEADDR] [get_ips sss_output_queues_ip]
+#set_property generate_synth_checkpoint false [get_files sss_output_queues_ip.xci]
+#reset_target all [get_ips sss_output_queues_ip]
+#generate_target all [get_ips sss_output_queues_ip]
 
 #Add ID block
 create_ip -name blk_mem_gen -vendor xilinx.com -library ip -version 8.4 -module_name identifier_ip
@@ -156,7 +156,13 @@ update_ip_catalog
 source $::env(NF_DESIGN_DIR)/hw/tcl/control_sub_sim.tcl
 
 read_verilog "$::env(NF_DESIGN_DIR)/hw/hdl/axi_clocking.v"
-read_verilog "$::env(NF_DESIGN_DIR)/hw/hdl/nf_datapath.v"
+read_verilog "$::env(NF_DESIGN_DIR)/hw/hdl/axis_pkt_generator.v"
+read_verilog "$::env(NF_DESIGN_DIR)/hw/hdl/input_arbiter.v"
+read_verilog "$::env(NF_DESIGN_DIR)/hw/hdl/timer_module.v"
+read_verilog "$::env(NF_DESIGN_DIR)/hw/hdl/event_merger.v"
+read_verilog "$::env(NF_DESIGN_DIR)/hw/hdl/XilinxSwitch_dummy.v"
+read_verilog "$::env(NF_DESIGN_DIR)/hw/hdl/event_output_queues.v"
+read_verilog "$::env(NF_DESIGN_DIR)/hw/hdl/sume_event_switch.v"
 read_verilog "$::env(NF_DESIGN_DIR)/hw/hdl/top_sim.v"
 read_verilog "$::env(NF_DESIGN_DIR)/hw/hdl/top_tb.v"
 
@@ -181,7 +187,7 @@ set_property xsim.view {} [get_filesets sim_1]
 launch_simulation -simset sim_1 -mode behavioral
 
 # Add top level datapath IO
-set nf_datapath top_tb/top_sim/nf_datapath_0/
+set nf_datapath top_tb/top_sim/sume_event_switch_0/
 add_wave_divider {input arbiter input signals}
 add_wave $nf_datapath/s_axis_0_tdata -color blue
 add_wave $nf_datapath/s_axis_0_tkeep -color blue
@@ -245,82 +251,5 @@ add_wave $nf_datapath/m_axis_4_tuser -color cyan
 add_wave $nf_datapath/m_axis_4_tvalid -color cyan
 add_wave $nf_datapath/m_axis_4_tready -color cyan
 add_wave $nf_datapath/m_axis_4_tlast -color cyan
-
-## Add top level AXI Lite control signals to P4_SWITCH
-#add_wave_divider {Top-Level SDNet Control Signals}
-#add_wave top_tb/top_sim/M02_AXI_araddr
-#add_wave top_tb/top_sim/M02_AXI_arprot
-#add_wave top_tb/top_sim/M02_AXI_arready
-#add_wave top_tb/top_sim/M02_AXI_arvalid
-#add_wave top_tb/top_sim/M02_AXI_awaddr
-#add_wave top_tb/top_sim/M02_AXI_awprot
-#add_wave top_tb/top_sim/M02_AXI_awready
-#add_wave top_tb/top_sim/M02_AXI_awvalid
-#add_wave top_tb/top_sim/M02_AXI_bready
-#add_wave top_tb/top_sim/M02_AXI_bresp
-#add_wave top_tb/top_sim/M02_AXI_bvalid
-#add_wave top_tb/top_sim/M02_AXI_rdata
-#add_wave top_tb/top_sim/M02_AXI_rready
-#add_wave top_tb/top_sim/M02_AXI_rresp
-#add_wave top_tb/top_sim/M02_AXI_rvalid
-#add_wave top_tb/top_sim/M02_AXI_wdata
-#add_wave top_tb/top_sim/M02_AXI_wready
-#add_wave top_tb/top_sim/M02_AXI_wstrb
-#add_wave top_tb/top_sim/M02_AXI_wvalid
-
-# Add SDNet Interface Signals
-set sdnet_ip top_tb/top_sim/nf_datapath_0/nf_sume_sdnet_wrapper_1/inst/SimpleSumeSwitch_inst/
-add_wave_divider {SDNet Control Interface}
-add_wave top_tb/top_sim/nf_datapath_0/nf_sume_sdnet_wrapper_1/inst/internal_rst_done -color yellow
-add_wave $sdnet_ip/control_S_AXI_AWADDR
-add_wave $sdnet_ip/control_S_AXI_AWVALID 
-add_wave $sdnet_ip/control_S_AXI_AWREADY 
-add_wave $sdnet_ip/control_S_AXI_WDATA   
-add_wave $sdnet_ip/control_S_AXI_WSTRB   
-add_wave $sdnet_ip/control_S_AXI_WVALID  
-add_wave $sdnet_ip/control_S_AXI_WREADY  
-add_wave $sdnet_ip/control_S_AXI_BRESP   
-add_wave $sdnet_ip/control_S_AXI_BVALID  
-add_wave $sdnet_ip/control_S_AXI_BREADY  
-add_wave $sdnet_ip/control_S_AXI_ARADDR  
-add_wave $sdnet_ip/control_S_AXI_ARVALID 
-add_wave $sdnet_ip/control_S_AXI_ARREADY 
-add_wave $sdnet_ip/control_S_AXI_RDATA   
-add_wave $sdnet_ip/control_S_AXI_RRESP   
-add_wave $sdnet_ip/control_S_AXI_RVALID  
-add_wave $sdnet_ip/control_S_AXI_RREADY  
-
-set nf_sume_sdnet_ip top_tb/top_sim/nf_datapath_0/nf_sume_sdnet_wrapper_1/inst/
-add_wave_divider {nf_sume_sdnet input interface}
-add_wave $sdnet_ip/clk_lookup_rst
-add_wave $sdnet_ip/clk_lookup
-add_wave $nf_sume_sdnet_ip/s_axis_tdata -radix hex
-add_wave $nf_sume_sdnet_ip/s_axis_tkeep -radix hex
-add_wave $nf_sume_sdnet_ip/s_axis_tvalid
-add_wave $nf_sume_sdnet_ip/s_axis_tready
-add_wave $nf_sume_sdnet_ip/s_axis_tlast
-
-add_wave_divider {SDNet Tuple-In}
-add_wave $nf_sume_sdnet_ip/sume_tuple_in_VALID
-add_wave $nf_sume_sdnet_ip/s_axis_tuser -radix hex
-add_wave $nf_sume_sdnet_ip/in_pkt_len
-add_wave $nf_sume_sdnet_ip/in_src_port
-add_wave $nf_sume_sdnet_ip/in_dst_port
-
-add_wave_divider {nf_sume_sdnet output interface}
-add_wave $sdnet_ip/clk_lookup_rst
-add_wave $sdnet_ip/clk_lookup
-add_wave $nf_sume_sdnet_ip/m_axis_tdata -radix hex
-add_wave $nf_sume_sdnet_ip/m_axis_tkeep -radix hex
-add_wave $nf_sume_sdnet_ip/m_axis_tvalid
-add_wave $nf_sume_sdnet_ip/m_axis_tready
-add_wave $nf_sume_sdnet_ip/m_axis_tlast
-
-add_wave_divider {SDNet Tuple-Out}
-add_wave $nf_sume_sdnet_ip/sume_tuple_out_VALID
-add_wave $nf_sume_sdnet_ip/m_axis_tuser -radix hex
-add_wave $nf_sume_sdnet_ip/out_pkt_len
-add_wave $nf_sume_sdnet_ip/out_src_port
-add_wave $nf_sume_sdnet_ip/out_dst_port
 
 run 65us

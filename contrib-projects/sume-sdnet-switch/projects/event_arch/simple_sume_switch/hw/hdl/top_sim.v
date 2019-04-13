@@ -443,21 +443,20 @@ assign axi_aresetn = sys_rst_n_c;
 // Network modules                                                                               //
 //-----------------------------------------------------------------------------------------------//
 
-nf_datapath 
+sume_event_arch
 #(
     // Master AXI Stream Data Width
     .C_M_AXIS_DATA_WIDTH (C_DATA_WIDTH),
     .C_S_AXIS_DATA_WIDTH (C_DATA_WIDTH),
     .C_M_AXIS_TUSER_WIDTH (128),
-    .C_S_AXIS_TUSER_WIDTH (128),
-    .NUM_QUEUES (5)
+    .C_S_AXIS_TUSER_WIDTH (128)
 )
-nf_datapath_0 
+sume_event_arch_0 
 (
-    .axis_aclk                        (clk_200),
-    .axis_resetn                      (sys_rst_n_c),
-   .axi_aclk(clk_200),
-   .axi_resetn(sys_rst_n_c),
+   .axis_aclk                       (clk_200),
+   .axis_resetn                     (sys_rst_n_c),
+   .axi_aclk                        (clk_200),
+   .axi_resetn                      (sys_rst_n_c),
     
     // Slave Stream Ports (interface from Rx queues)
     .s_axis_0_tdata                 (axis_i_0_tdata),  
@@ -578,7 +577,9 @@ nf_datapath_0
      .S2_AXI_WREADY                    (M03_AXI_wready), 
      .S2_AXI_BRESP                     (M03_AXI_bresp),  
      .S2_AXI_BVALID                    (M03_AXI_bvalid), 
-     .S2_AXI_AWREADY                   (M03_AXI_awready)
+     .S2_AXI_AWREADY                   (M03_AXI_awready),
+
+     .link_status                      (4'b1111)
     
     );
     
