@@ -88,8 +88,8 @@ module timer_module
     reg [TIMER_PERIOD_WIDTH-1:0] timer_period_r, timer_period_r_next;    
     reg                          timer_trigger_r, timer_trigger_r_next;
 
-    wire [TIMER_WIDTH-1] cur_time;
-    wire [1:0]           ctr_bits;
+    wire [TIMER_WIDTH-1:0] cur_time;
+    wire [1:0]             ctr_bits;
 
     //-------------------- Modules and Logic ---------------------------
 

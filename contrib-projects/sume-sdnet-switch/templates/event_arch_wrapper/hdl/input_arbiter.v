@@ -335,12 +335,12 @@ module input_arbiter
       end
    end
 
-`ifdef COCOTB_SIM
-initial begin
-  $dumpfile ("input_arbiter_waveform.vcd");
-  $dumpvars (0, input_arbiter);
-  #1 $display("Sim running...");
-end
-`endif
+//`ifdef COCOTB_SIM
+//initial begin
+//  $dumpfile ("input_arbiter_waveform.vcd");
+//  $dumpvars (0, input_arbiter);
+//  #1 $display("Sim running...");
+//end
+//`endif
 
 endmodule

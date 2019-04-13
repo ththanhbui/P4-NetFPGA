@@ -138,17 +138,17 @@ module event_merger
     // Incomming Enqueue Events
     input                                          enq_trigger,
     output                                         enq_event_rd,
-    input [USER_ENQ_DATA_WIDTH-1:0]                enq_event_data,
+    input [USER_ENQ_DATA_WIDTH+PORT_WIDTH-1:0]     enq_event_data,
 
     // Incomming Dequeue Events
     input                                          deq_trigger,
     output                                         deq_event_rd,
-    input [USER_DEQ_DATA_WIDTH-1:0]                deq_event_data,
+    input [USER_DEQ_DATA_WIDTH+PORT_WIDTH-1:0]     deq_event_data,
 
     // Incomming Drop Events
     input                                          drop_trigger,
     output                                         drop_event_rd,
-    input [USER_DROP_DATA_WIDTH-1:0]               drop_event_data,
+    input [USER_DROP_DATA_WIDTH+PORT_WIDTH-1:0]    drop_event_data,
 
     // Incomming Timer Event Configuration
     input                                          s_timer_period_valid,
@@ -181,7 +181,7 @@ module event_merger
    localparam L2_RFSM_STATES   = 1;   
 
    localparam MAX_PKT_SIZE = 2048; // bytes
-   localparam L2_PKT_FIFO_DEPTH = log2(MAX_PKT_SIZE/C_S_AXIS_DATA_WIDTH);
+   localparam L2_PKT_FIFO_DEPTH = log2(MAX_PKT_SIZE/(C_S_AXIS_DATA_WIDTH/8));
    localparam L2_META_FIFO_DEPTH = 2; // up to 4 packets
 
    //---------------------- Wires and Regs ---------------------------- 
@@ -508,12 +508,12 @@ module event_merger
         end
     end
 
-`ifdef COCOTB_SIM
-initial begin
-  $dumpfile ("event_merger_waveform.vcd");
-  $dumpvars (0, event_merger);
-  #1 $display("Sim running...");
-end
-`endif
+//`ifdef COCOTB_SIM
+//initial begin
+//  $dumpfile ("event_merger_waveform.vcd");
+//  $dumpvars (0, event_merger);
+//  #1 $display("Sim running...");
+//end
+//`endif
    
 endmodule

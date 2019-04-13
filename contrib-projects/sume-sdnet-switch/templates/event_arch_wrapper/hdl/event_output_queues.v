@@ -210,28 +210,28 @@ module event_output_queues
    wire  [NUM_PORTS-1:0]                     m_axis_tready;
    wire  [NUM_PORTS-1:0]                     m_axis_tlast;
 
-   reg [PORT_WIDTH-1:0] enq_port;
+   reg [PORT_WIDTH-1:0]           enq_port;
    reg [USER_DROP_DATA_WIDTH-1:0] user_enq_data;
-   reg [ENQ_DATA_WIDTH-1:0] s_enq_event_data;
-   reg enq_event_wr;
-   wire enq_event_full;
-   wire enq_event_empty;
+   reg [ENQ_DATA_WIDTH-1:0]       s_enq_event_data;
+   reg                            enq_event_wr;
+   wire                           enq_event_full;
+   wire                           enq_event_empty;
 
-   reg [PORT_WIDTH-1:0] deq_port;
+   reg [PORT_WIDTH-1:0]          deq_port;
    reg [USER_DEQ_DATA_WIDTH-1:0] user_deq_data;
-   reg [DEQ_DATA_WIDTH-1:0] deq_event_din;
-   reg  deq_event_wr;
-   wire deq_event_full;
-   wire deq_event_empty;
+   reg [DEQ_DATA_WIDTH-1:0]      deq_event_din;
+   reg                           deq_event_wr;
+   wire                          deq_event_full;
+   wire                          deq_event_empty;
 
-   reg [L2_DROP_STATES-1:0] drop_state, drop_state_next;
+   reg [L2_DROP_STATES-1:0]       drop_state, drop_state_next;
 
-   reg [PORT_WIDTH-1:0] drop_port;
+   reg [PORT_WIDTH-1:0]           drop_port;
    reg [USER_DROP_DATA_WIDTH-1:0] user_drop_data;
-   reg [DROP_DATA_WIDTH-1:0] s_drop_event_data;
-   reg  drop_event_wr;
-   wire drop_event_full;
-   wire drop_event_empty;
+   reg [DROP_DATA_WIDTH-1:0]      s_drop_event_data;
+   reg                            drop_event_wr;
+   wire                           drop_event_full;
+   wire                           drop_event_empty;
 
    wire [USER_DEQ_DATA_WIDTH-1:0]   deq_port_fifo_din [NUM_PORTS-1:0];
    wire [NUM_PORTS-1:0]             deq_port_fifo_wr;
@@ -273,8 +273,8 @@ module event_output_queues
           )
           meta_fifo
             (.din         (s_axis_tuser),     // Data in
-             .wr_en       (m_fifo_wr_en[i]),       // Write enable
-             .rd_en       (m_fifo_rd_en[i]),       // Read the next word
+             .wr_en       (m_fifo_wr_en[i]),  // Write enable
+             .rd_en       (m_fifo_rd_en[i]),  // Read the next word
              .dout        (m_axis_tuser[i]),
              .full        (),
              .prog_full   (),
@@ -322,7 +322,8 @@ module event_output_queues
 
             case(ifsm_state[i])
                 WAIT_START: begin
-                    if (s_axis_tvalid & s_axis_tready) begin
+                    // do not write single cycle packets
+                    if (s_axis_tvalid & s_axis_tready & ~s_axis_tlast) begin
                         if (port_enable[i] & ~d_fifo_nearly_full[i] & ~m_fifo_nearly_full[i]) begin
                             d_fifo_wr_en[i] = 1;
                             m_fifo_wr_en[i] = 1;
@@ -601,13 +602,13 @@ module event_output_queues
     assign m_axis_tready[4] = m_axis_4_tready;
     assign m_axis_4_tlast = m_axis_tlast[4];
 
-`ifdef COCOTB_SIM
-initial begin
-  $dumpfile ("event_output_queues_waveform.vcd");
-  $dumpvars (0, event_output_queues);
-  #1 $display("Sim running...");
-end
-`endif
+//`ifdef COCOTB_SIM
+//initial begin
+//  $dumpfile ("event_output_queues_waveform.vcd");
+//  $dumpvars (0, event_output_queues);
+//  #1 $display("Sim running...");
+//end
+//`endif
 
 endmodule // event_output_queues
 
