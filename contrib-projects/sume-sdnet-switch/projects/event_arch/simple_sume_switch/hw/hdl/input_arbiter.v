@@ -265,7 +265,7 @@ module input_arbiter
    assign in_tuser[5]        = s_axis_5_tuser;
    assign in_tvalid[5]       = s_axis_5_tvalid;
    assign in_tlast[5]        = s_axis_5_tlast;
-   assign s_axis_4_tready    = !in_fifo_nearly_full[5];
+   assign s_axis_5_tready    = !in_fifo_nearly_full[5];
 
    // wires to output fifo
    assign out_fifo_tlast = in_fifo_tlast[cur_queue];

@@ -558,7 +558,7 @@ assign axi_datapath_resetn = axis_resetn;
 // Network modules                                                                               //
 //-----------------------------------------------------------------------------------------------//
 
-sume_event_arch
+sume_event_switch
 #(
     .C_S_AXI_ADDR_WIDTH (12),
     // Master AXI Stream Data Width
@@ -567,7 +567,7 @@ sume_event_arch
     .C_M_AXIS_TUSER_WIDTH (128),
     .C_S_AXIS_TUSER_WIDTH (128)
 )
-sume_event_arch_0 
+sume_event_switch_0 
 (
     .axis_aclk                        (clk_200),
     .axis_resetn                      (axis_resetn),

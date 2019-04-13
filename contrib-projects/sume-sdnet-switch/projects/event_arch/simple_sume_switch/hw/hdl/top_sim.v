@@ -443,7 +443,7 @@ assign axi_aresetn = sys_rst_n_c;
 // Network modules                                                                               //
 //-----------------------------------------------------------------------------------------------//
 
-sume_event_arch
+sume_event_switch
 #(
     // Master AXI Stream Data Width
     .C_M_AXIS_DATA_WIDTH (C_DATA_WIDTH),
@@ -451,7 +451,7 @@ sume_event_arch
     .C_M_AXIS_TUSER_WIDTH (128),
     .C_S_AXIS_TUSER_WIDTH (128)
 )
-sume_event_arch_0 
+sume_event_switch_0 
 (
    .axis_aclk                       (clk_200),
    .axis_resetn                     (sys_rst_n_c),
