@@ -108,10 +108,12 @@ module nf_10g_interface #(
     	output                                    S_AXI_AWREADY,
 
 	//Serial I/O from/to transceiver
-	input 					                  rxn,
-  	input 					                  rxp,
- 	output 					                  txn,
-  	output 					                  txp	
+	input 					  rxn,
+  	input 					  rxp,
+ 	output 					  txn,
+  	output 					  txp,
+
+        output                                    signal_detect
 );
 
 // Xilinx AXIS converter creates tuser width with

@@ -96,27 +96,27 @@ module nf_10g_interface_shared_block #(
 	input 					                 rxn,
   	input 					                 rxp,
  	output 					                 txn,
-  	output 					                 txp	
+  	output 					                 txp,
+
+        output                                                   signal_detect
 );
 
-(* mark_debug = "true" *) wire [C_AXIS_DATA_INTERNAL_WIDTH-1:0]		s_axis_tx_tdata;
-(* mark_debug = "true" *) wire [(C_AXIS_DATA_INTERNAL_WIDTH/8)-1:0]		s_axis_tx_tkeep;
-(* mark_debug = "true" *) wire 					     	s_axis_tx_tlast;
-(* mark_debug = "true" *) wire [0:0]		     			s_axis_tx_tuser;
-(* mark_debug = "true" *) wire 					     	s_axis_tx_tvalid;
-(* mark_debug = "true" *) wire 					     	s_axis_tx_tready;
+wire [C_AXIS_DATA_INTERNAL_WIDTH-1:0]		s_axis_tx_tdata;
+wire [(C_AXIS_DATA_INTERNAL_WIDTH/8)-1:0]		s_axis_tx_tkeep;
+wire 					     	s_axis_tx_tlast;
+wire [0:0]		     			s_axis_tx_tuser;
+wire 					     	s_axis_tx_tvalid;
+wire 					     	s_axis_tx_tready;
 
-(* mark_debug = "true" *) wire [C_AXIS_DATA_INTERNAL_WIDTH-1:0]	     	m_axis_rx_tdata;
-(* mark_debug = "true" *) wire [(C_AXIS_DATA_INTERNAL_WIDTH/8)-1:0]    	m_axis_rx_tkeep;
-(* mark_debug = "true" *) wire 					     	m_axis_rx_tlast;
-(* mark_debug = "true" *) wire [0:0]					m_axis_rx_tuser;
-(* mark_debug = "true" *) wire 					     	m_axis_rx_tvalid;
+wire [C_AXIS_DATA_INTERNAL_WIDTH-1:0]	     	m_axis_rx_tdata;
+wire [(C_AXIS_DATA_INTERNAL_WIDTH/8)-1:0]    	m_axis_rx_tkeep;
+wire 					     	m_axis_rx_tlast;
+wire [0:0]					m_axis_rx_tuser;
+wire 					     	m_axis_rx_tvalid;
 
+wire [C_M_AXIS_TUSER_WIDTH-1:0]	     		m_axis_tuser_128;
+wire [C_S_AXIS_TUSER_WIDTH-1:0]	     		s_axis_tuser_128;
 
-(* mark_debug = "true" *) wire [C_M_AXIS_TUSER_WIDTH-1:0]	     		m_axis_tuser_128;
-(* mark_debug = "true" *) wire [C_S_AXIS_TUSER_WIDTH-1:0]	     		s_axis_tuser_128;
-
-wire                                 		signal_detect;
 wire                                 		areset_clk156_out_n;
 
 wire [7:0] 					pcspma_status_internal;
