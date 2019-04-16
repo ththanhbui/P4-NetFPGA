@@ -30,7 +30,8 @@
 
 # Makefile to build the SUME-SDNet module / wrapper IP for use in the SUME project 
 
-SDNET_OUT_DIR=nf_sume_sdnet_ip
+SDNET_OUT_DIR=sume_event_switch_ip
+WRAPPER_DIR=event_arch_wrapper
 
 PX=sdnet
 PX_FLAGS=-busType axi -busWidth 256 -singlecontrolport -workDir ${SDNET_OUT_DIR} -altVivadoScripts
@@ -88,9 +89,9 @@ config_writes:
 install_sdnet: uninstall_sdnet
 	cp -r ${SDNET_OUT_DIR} ${TARGET}/
 	mkdir ${TARGET}/${SDNET_OUT_DIR}/wrapper
-	cp ${SUME_SDNET}/templates/sss_wrapper/hdl/* ${TARGET}/${SDNET_OUT_DIR}/wrapper/
-	cp ${SUME_SDNET}/templates/sss_wrapper/tcl/* ${TARGET}/${SDNET_OUT_DIR}/
-	cp ${SUME_SDNET}/templates/sss_wrapper/Makefile ${TARGET}/${SDNET_OUT_DIR}/
+	cp ${SUME_SDNET}/templates/${WRAPPER_DIR}/hdl/* ${TARGET}/${SDNET_OUT_DIR}/wrapper/
+	cp ${SUME_SDNET}/templates/${WRAPPER_DIR}/tcl/* ${TARGET}/${SDNET_OUT_DIR}/
+	cp ${SUME_SDNET}/templates/${WRAPPER_DIR}/Makefile ${TARGET}/${SDNET_OUT_DIR}/
 	make -C ${TARGET}/${SDNET_OUT_DIR}/
 
 uninstall_sdnet:

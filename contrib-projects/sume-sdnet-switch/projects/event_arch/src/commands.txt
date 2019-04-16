@@ -27,3 +27,7 @@
 // @NETFPGA_LICENSE_HEADER_END@
 //
 
+table_cam_add_entry lookup_dst_port set_dst_port 0b00000001 => 0b00000100
+table_cam_add_entry lookup_dst_port set_dst_port 0b00000100 => 0b00000001
+table_cam_add_entry lookup_dst_port set_dst_port 0b00010000 => 0b01000000
+table_cam_add_entry lookup_dst_port set_dst_port 0b01000000 => 0b00010000

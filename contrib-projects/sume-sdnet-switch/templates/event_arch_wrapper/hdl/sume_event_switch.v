@@ -42,7 +42,7 @@
 module sume_event_switch #(
     //Slave AXI parameters
     parameter C_S_AXI_DATA_WIDTH    = 32,
-    parameter C_S_AXI_ADDR_WIDTH    = 32,
+    parameter C_S_AXI_ADDR_WIDTH    = 12,
      parameter C_BASEADDR            = 32'h00000000,
 
     // Master AXI Stream Data Width

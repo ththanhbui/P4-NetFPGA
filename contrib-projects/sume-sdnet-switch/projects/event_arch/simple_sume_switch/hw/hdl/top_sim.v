@@ -443,7 +443,7 @@ assign axi_aresetn = sys_rst_n_c;
 // Network modules                                                                               //
 //-----------------------------------------------------------------------------------------------//
 
-sume_event_switch
+sume_event_switch_ip
 #(
     // Master AXI Stream Data Width
     .C_M_AXIS_DATA_WIDTH (C_DATA_WIDTH),

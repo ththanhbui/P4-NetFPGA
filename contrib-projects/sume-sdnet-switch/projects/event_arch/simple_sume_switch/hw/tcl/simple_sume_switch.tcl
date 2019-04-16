@@ -76,24 +76,13 @@ set_property constrset constraints [get_runs impl_1]
 #####################################
 update_ip_catalog
 
-#create_ip -name input_arbiter_drr -vendor NetFPGA -library NetFPGA -module_name input_arbiter_drr_ip
-#set_property generate_synth_checkpoint false [get_files input_arbiter_drr_ip.xci]
-#reset_target all [get_ips input_arbiter_drr_ip]
-#generate_target all [get_ips input_arbiter_drr_ip]
-
-#create_ip -name sss_output_queues -vendor NetFPGA -library NetFPGA -module_name sss_output_queues_ip
-#set_property generate_synth_checkpoint false [get_files sss_output_queues_ip.xci]
-#reset_target all [get_ips sss_output_queues_ip]
-#generate_target all [get_ips sss_output_queues_ip]
-
-
 #create the IPI Block Diagram
 source ./tcl/control_sub.tcl
 
-#create_ip -name nf_sume_sdnet -vendor NetFPGA -library NetFPGA -module_name nf_sume_sdnet_ip
-#set_property generate_synth_checkpoint false [get_files nf_sume_sdnet_ip.xci]
-#reset_target all [get_ips nf_sume_sdnet_ip]
-#generate_target all [get_ips nf_sume_sdnet_ip]
+create_ip -name sume_event_switch -vendor NetFPGA -library NetFPGA -module_name sume_event_switch_ip
+set_property generate_synth_checkpoint false [get_files sume_event_switch_ip.xci]
+reset_target all [get_ips sume_event_switch_ip]
+generate_target all [get_ips sume_event_switch_ip]
 
 source ./create_ip/nf_10ge_interface.tcl
 create_ip -name nf_10ge_interface -vendor NetFPGA -library NetFPGA -module_name nf_10g_interface_ip
@@ -132,13 +121,6 @@ generate_target all [get_ips identifier_ip]
 
 
 read_verilog "./hdl/axi_clocking.v"
-read_verilog "./hdl/axis_pkt_generator.v"
-read_verilog "./hdl/input_arbiter.v"
-read_verilog "./hdl/timer_module.v"
-read_verilog "./hdl/event_merger.v"
-read_verilog "./hdl/XilinxSwitch_dummy.v"
-read_verilog "./hdl/event_output_queues.v"
-read_verilog "./hdl/sume_event_switch.v"
 read_verilog "./hdl/top.v"
 
 

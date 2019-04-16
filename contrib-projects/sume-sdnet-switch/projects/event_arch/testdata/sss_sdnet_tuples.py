@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 
 #
-# Copyright (c) 2017 Stephen Ibanez
+# Copyright (c) 2019 Stephen Ibanez
 # All rights reserved.
 #
 # This software was developed by Stanford University and the University of Cambridge Computer Laboratory 
@@ -38,18 +38,18 @@ SDNet simulations
 import argparse, collections, sys
 
 # this defines the common sume_metadata
-from sss_sume_metadata import *
+from sume_event_metadata import *
 
 tuple_in_file = "Tuple_in.txt"
 tuple_expect_file = "Tuple_expect.txt"
 
-# Diget Data MUST be 80 bits
+# Diget Data is unused
 """ Digest Data:
-   unused         (256 bits)
+   unused (8 bits)
 """
 
 dig_field_len = collections.OrderedDict()
-dig_field_len['unused'] = 256
+dig_field_len['unused'] = 8
 
 #initialize tuple_expect
 dig_tuple_expect = collections.OrderedDict()

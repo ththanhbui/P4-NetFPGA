@@ -1,5 +1,5 @@
 //
-// Copyright (c) 2017 Stephen Ibanez
+// Copyright (c) 2019 Stephen Ibanez
 // All rights reserved.
 //
 // This software was developed by Stanford University and the University of Cambridge Computer Laboratory 
@@ -29,7 +29,7 @@
 
 
 #include <core.p4>
-#include <sume_switch.p4>
+#include "sume_switch.p4"
 
 /*
  * Template P4 project for SimpleSumeSwitch 
@@ -37,9 +37,6 @@
  */
 
 typedef bit<48> EthAddr_t; 
-typedef bit<32> IPv4Addr_t;
-
-#define IPV4_TYPE 0x0800
 
 // standard Ethernet header
 header Ethernet_h { 
@@ -48,27 +45,10 @@ header Ethernet_h {
     bit<16> etherType;
 }
 
-// IPv4 header without options
-header IPv4_h {
-    bit<4> version;
-    bit<4> ihl;
-    bit<8> tos; 
-    bit<16> totalLen; 
-    bit<16> identification; 
-    bit<3> flags;
-    bit<13> fragOffset; 
-    bit<8> ttl;
-    bit<8> protocol; 
-    bit<16> hdrChecksum; 
-    IPv4Addr_t srcAddr; 
-    IPv4Addr_t dstAddr;
-}
-
 
 // List of all recognized headers
 struct Parsed_packet { 
     Ethernet_h ethernet; 
-    IPv4_h ip;
 }
 
 // user defined metadata: can be used to shared information between
@@ -77,9 +57,9 @@ struct user_metadata_t {
     bit<8>  unused;
 }
 
-// digest data to be sent to CPU if desired. MUST be 256 bits!
+// digest data is unused
 struct digest_data_t {
-    bit<256>  unused;
+    bit<8>  unused;
 }
 
 // Parser Implementation
@@ -93,15 +73,7 @@ parser TopParser(packet_in b,
         b.extract(p.ethernet);
         user_metadata.unused = 0;
         digest_data.unused = 0;
-        transition select(p.ethernet.etherType) {
-            IPV4_TYPE: parse_ipv4;
-            default: reject;
-        } 
-    }
-
-    state parse_ipv4 { 
-        b.extract(p.ip);
-        transition accept; 
+        transition accept;
     }
 }
 
@@ -111,10 +83,28 @@ control TopPipe(inout Parsed_packet p,
                 inout digest_data_t digest_data, 
                 inout sume_metadata_t sume_metadata) {
 
+    action set_dst_port(port_t port) {
+        sume_metadata.dst_port = port;
+    }
 
+    action mark_to_drop() {
+        sume_metadata.dst_port = 0;
+    }
+
+    table lookup_dst_port {
+        key = { sume_metadata.src_port : exact; }
+        actions = {
+            set_dst_port;
+            mark_to_drop;
+        }
+        size = 64;
+        default_action = mark_to_drop;
+    }
 
     apply {
-
+        if (sume_metadata.pkt_trigger == 1) {
+            lookup_dst_port.apply();
+        }
     }
 }
 
@@ -127,7 +117,6 @@ control TopDeparser(packet_out b,
                     inout sume_metadata_t sume_metadata) { 
     apply {
         b.emit(p.ethernet); 
-        b.emit(p.ip);
     }
 }
 

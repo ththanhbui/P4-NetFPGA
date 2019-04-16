@@ -558,7 +558,7 @@ assign axi_datapath_resetn = axis_resetn;
 // Network modules                                                                               //
 //-----------------------------------------------------------------------------------------------//
 
-sume_event_switch
+sume_event_switch_ip
 #(
     .C_S_AXI_ADDR_WIDTH (12),
     // Master AXI Stream Data Width

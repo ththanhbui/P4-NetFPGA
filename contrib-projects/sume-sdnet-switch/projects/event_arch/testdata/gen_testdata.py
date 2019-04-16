@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 
 #
-# Copyright (c) 2017 Stephen Ibanez
+# Copyright (c) 2019 Stephen Ibanez
 # All rights reserved.
 #
 # This software was developed by Stanford University and the University of Cambridge Computer Laboratory 
@@ -61,8 +61,10 @@ sss_sdnet_tuples.clear_tuple_files()
 
 def applyPkt(pkt, ingress, time):
     pktsApplied.append(pkt)
+    sss_sdnet_tuples.sume_tuple_in['pkt_trigger'] = 1 
     sss_sdnet_tuples.sume_tuple_in['pkt_len'] = len(pkt) 
     sss_sdnet_tuples.sume_tuple_in['src_port'] = nf_port_map[ingress]
+    sss_sdnet_tuples.sume_tuple_expect['pkt_trigger'] = 1 
     sss_sdnet_tuples.sume_tuple_expect['pkt_len'] = len(pkt) 
     sss_sdnet_tuples.sume_tuple_expect['src_port'] = nf_port_map[ingress]
     pkt.time = time
@@ -99,6 +101,18 @@ def write_pcap_files():
 # generate testdata #
 #####################
 
+MAC1 = "08:01:01:01:01:01"
+MAC2 = "08:02:02:02:02:02"
+
+pktCnt = 0
+
+pkt = Ether(dst=MAC2, src=MAC1)
+pkt = pad_pkt(pkt, 64)
+applyPkt(pkt, 'nf0', pktCnt)
+pktCnt += 1
+pkt = Ether(dst=MAC2, src=MAC1)
+pkt = pad_pkt(pkt, 64)
+expPkt(pkt, 'nf1')
 
 write_pcap_files()
 

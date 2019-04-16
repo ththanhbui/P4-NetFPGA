@@ -66,22 +66,10 @@ set_property is_enabled true [get_files ${project_constraints}]
 
 update_ip_catalog
 
-#create_ip -name nf_sume_sdnet -vendor NetFPGA -library NetFPGA -module_name nf_sume_sdnet_ip
-#set_property generate_synth_checkpoint false [get_files nf_sume_sdnet_ip.xci]
-#reset_target all [get_ips nf_sume_sdnet_ip]
-#generate_target all [get_ips nf_sume_sdnet_ip]
-
-#create_ip -name input_arbiter_drr -vendor NetFPGA -library NetFPGA -module_name input_arbiter_drr_ip
-#set_property -dict [list CONFIG.C_BASEADDR $INPUT_ARBITER_BASEADDR] [get_ips input_arbiter_drr_ip]
-#set_property generate_synth_checkpoint false [get_files input_arbiter_drr_ip.xci]
-#reset_target all [get_ips input_arbiter_drr_ip]
-#generate_target all [get_ips input_arbiter_drr_ip]
-
-#create_ip -name sss_output_queues -vendor NetFPGA -library NetFPGA -module_name sss_output_queues_ip
-#set_property -dict [list CONFIG.C_BASEADDR $OUTPUT_QUEUES_BASEADDR] [get_ips sss_output_queues_ip]
-#set_property generate_synth_checkpoint false [get_files sss_output_queues_ip.xci]
-#reset_target all [get_ips sss_output_queues_ip]
-#generate_target all [get_ips sss_output_queues_ip]
+create_ip -name sume_event_switch -vendor NetFPGA -library NetFPGA -module_name sume_event_switch_ip
+set_property generate_synth_checkpoint false [get_files sume_event_switch_ip.xci]
+reset_target all [get_ips sume_event_switch_ip]
+generate_target all [get_ips sume_event_switch_ip]
 
 #Add ID block
 create_ip -name blk_mem_gen -vendor xilinx.com -library ip -version 8.4 -module_name identifier_ip
@@ -156,13 +144,6 @@ update_ip_catalog
 source $::env(NF_DESIGN_DIR)/hw/tcl/control_sub_sim.tcl
 
 read_verilog "$::env(NF_DESIGN_DIR)/hw/hdl/axi_clocking.v"
-read_verilog "$::env(NF_DESIGN_DIR)/hw/hdl/axis_pkt_generator.v"
-read_verilog "$::env(NF_DESIGN_DIR)/hw/hdl/input_arbiter.v"
-read_verilog "$::env(NF_DESIGN_DIR)/hw/hdl/timer_module.v"
-read_verilog "$::env(NF_DESIGN_DIR)/hw/hdl/event_merger.v"
-read_verilog "$::env(NF_DESIGN_DIR)/hw/hdl/XilinxSwitch_dummy.v"
-read_verilog "$::env(NF_DESIGN_DIR)/hw/hdl/event_output_queues.v"
-read_verilog "$::env(NF_DESIGN_DIR)/hw/hdl/sume_event_switch.v"
 read_verilog "$::env(NF_DESIGN_DIR)/hw/hdl/top_sim.v"
 read_verilog "$::env(NF_DESIGN_DIR)/hw/hdl/top_tb.v"
 
