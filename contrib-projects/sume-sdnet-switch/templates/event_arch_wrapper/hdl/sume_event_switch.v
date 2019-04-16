@@ -424,8 +424,8 @@ module sume_event_switch #(
     );
 
     // SDNet Module
-    XilinxSwitch_dummy
-    XilinxSwitch_inst (
+    SimpleSumeSwitch
+    SimpleSumeSwitch_inst (
       // AXIS PACKET INPUT INTERFACE
       .packet_in_packet_in_TVALID                                        (s_axis_sdnet_tvalid),
       .packet_in_packet_in_TREADY                                        (s_axis_sdnet_tready),
@@ -434,8 +434,8 @@ module sume_event_switch #(
       .packet_in_packet_in_TLAST                                         (s_axis_sdnet_tlast),
 
       // TUPLE INPUT INTERFACE
-      .tuple_in_sume_event_meta_VALID                                    (s_axis_sdnet_tuser_valid),
-      .tuple_in_sume_event_meta_DATA                                     (s_axis_sdnet_tuser),
+      .tuple_in_sume_metadata_VALID                                      (s_axis_sdnet_tuser_valid),
+      .tuple_in_sume_metadata_DATA                                       (s_axis_sdnet_tuser),
    
       // AXI-LITE CONTROL INTERFACE
       .control_S_AXI_AWADDR                                              (S1_AXI_AWADDR),
@@ -467,8 +467,10 @@ module sume_event_switch #(
       .packet_out_packet_out_TLAST                                       (m_axis_sdnet_tlast),
       
       // TUPLE OUTPUT INTERFACE
-      .tuple_out_sume_event_meta_VALID                                   (m_axis_sdnet_tuser_valid),
-      .tuple_out_sume_event_meta_DATA                                    (m_axis_sdnet_tuser),
+      .tuple_out_sume_metadata_VALID                                     (m_axis_sdnet_tuser_valid),
+      .tuple_out_sume_metadata_DATA                                      (m_axis_sdnet_tuser),
+      .tuple_out_digest_data_VALID                                       (), // UNUSED
+      .tuple_out_digest_data_DATA                                        (), // UNUSED
       
       // LINE CLK & RST SIGNALS
       .clk_line_rst                                                      (~axis_resetn), // INV

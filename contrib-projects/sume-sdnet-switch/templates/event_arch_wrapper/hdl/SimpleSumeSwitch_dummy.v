@@ -29,22 +29,22 @@
 //
 /*******************************************************************************
  *  File:
- *        XilinxSwitch_dummy.v
+ *        SimpleSumeSwitch_dummy.v
  *
  *  Library:
  *
  *  Module:
- *        XilinxSwitch_dummy
+ *        SimpleSumeSwitch_dummy
  *
  *  Author:
  *        Stephen Ibanez
  * 		
  *  Description:
- *        A dummy XilinxSwitch module to be used for testing only.
+ *        A dummy SimpleSumeSwitch module to be used for testing only.
  *
  */
 
-module XilinxSwitch_dummy
+module SimpleSumeSwitch_dummy
 #(
     // Slave AXI parameters
     parameter C_S_AXI_DATA_WIDTH    = 32,
@@ -65,8 +65,8 @@ module XilinxSwitch_dummy
     input                                        packet_in_packet_in_TLAST,
 
     // TUPLE INPUT INTERFACE
-    input                                        tuple_in_sume_event_meta_VALID,
-    input [C_AXIS_TUSER_WIDTH-1:0]               tuple_in_sume_event_meta_DATA,
+    input                                        tuple_in_sume_metadata_VALID,
+    input [C_AXIS_TUSER_WIDTH-1:0]               tuple_in_sume_metadata_DATA,
 
     // AXI-LITE CONTROL INTERFACE
     input      [C_S_AXI_ADDR_WIDTH-1 : 0]        control_S_AXI_AWADDR,
@@ -98,8 +98,10 @@ module XilinxSwitch_dummy
     output                                       packet_out_packet_out_TLAST,
 
     // TUPLE OUTPUT INTERFACE
-    output                                       tuple_out_sume_event_meta_VALID,
-    output     [C_AXIS_TUSER_WIDTH-1:0]          tuple_out_sume_event_meta_DATA,
+    output                                       tuple_out_sume_metadata_VALID,
+    output     [C_AXIS_TUSER_WIDTH-1:0]          tuple_out_sume_metadata_DATA,
+    output                                       tuple_out_digest_data_VALID,
+    output     [C_AXIS_TUSER_WIDTH-1:0]          tuple_out_digest_data_DATA,
 
     // LINE CLK & RST SIGNALS
     input                                        clk_line_rst,
@@ -191,8 +193,8 @@ module XilinxSwitch_dummy
    assign s_axis_tlast       = packet_in_packet_in_TLAST;
    assign packet_in_packet_in_TREADY = s_axis_tready;
 
-   assign s_axis_tuser        = tuple_in_sume_event_meta_DATA;
-   assign s_axis_tuser_valid  = tuple_in_sume_event_meta_VALID;
+   assign s_axis_tuser        = tuple_in_sume_metadata_DATA;
+   assign s_axis_tuser_valid  = tuple_in_sume_metadata_VALID;
 
    // convert m_axis_* packet_out_*
    assign packet_out_packet_out_TDATA  = m_axis_tdata;
@@ -201,8 +203,10 @@ module XilinxSwitch_dummy
    assign packet_out_packet_out_TLAST  = m_axis_tlast;
    assign m_axis_tready = packet_out_packet_out_TREADY;
 
-   assign tuple_out_sume_event_meta_DATA  = m_axis_tuser;
-   assign tuple_out_sume_event_meta_VALID = m_axis_tuser_valid;
+   assign tuple_out_sume_metadata_DATA  = m_axis_tuser;
+   assign tuple_out_sume_metadata_VALID = m_axis_tuser_valid;
+   assign tuple_out_digest_data_DATA  = 0; // UNUSED
+   assign tuple_out_digest_data_VALID = m_axis_tuser_valid;
 
    // logic for tuser_valid signals
    assign m_fifo_wr_en = s_axis_tuser_valid;
