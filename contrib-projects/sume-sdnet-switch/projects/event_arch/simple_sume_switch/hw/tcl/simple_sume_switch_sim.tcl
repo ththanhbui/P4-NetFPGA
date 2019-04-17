@@ -168,69 +168,9 @@ set_property xsim.view {} [get_filesets sim_1]
 launch_simulation -simset sim_1 -mode behavioral
 
 # Add top level datapath IO
-set nf_datapath top_tb/top_sim/sume_event_switch_0/
-add_wave_divider {input arbiter input signals}
-add_wave $nf_datapath/s_axis_0_tdata -color blue
-add_wave $nf_datapath/s_axis_0_tkeep -color blue
-add_wave $nf_datapath/s_axis_0_tuser -color blue
-add_wave $nf_datapath/s_axis_0_tvalid -color blue
-add_wave $nf_datapath/s_axis_0_tready -color blue
-add_wave $nf_datapath/s_axis_0_tlast -color blue
-add_wave $nf_datapath/s_axis_1_tdata -color gold
-add_wave $nf_datapath/s_axis_1_tkeep -color gold
-add_wave $nf_datapath/s_axis_1_tuser -color gold
-add_wave $nf_datapath/s_axis_1_tvalid -color gold
-add_wave $nf_datapath/s_axis_1_tready -color gold
-add_wave $nf_datapath/s_axis_1_tlast -color gold
-add_wave $nf_datapath/s_axis_2_tdata -color orange
-add_wave $nf_datapath/s_axis_2_tkeep -color orange
-add_wave $nf_datapath/s_axis_2_tuser -color orange
-add_wave $nf_datapath/s_axis_2_tvalid -color orange
-add_wave $nf_datapath/s_axis_2_tready -color orange
-add_wave $nf_datapath/s_axis_2_tlast -color orange
-add_wave $nf_datapath/s_axis_3_tdata -color purple
-add_wave $nf_datapath/s_axis_3_tkeep -color purple
-add_wave $nf_datapath/s_axis_3_tuser -color purple
-add_wave $nf_datapath/s_axis_3_tvalid -color purple
-add_wave $nf_datapath/s_axis_3_tready -color purple
-add_wave $nf_datapath/s_axis_3_tlast -color purple
-add_wave $nf_datapath/s_axis_4_tdata -color cyan
-add_wave $nf_datapath/s_axis_4_tkeep -color cyan
-add_wave $nf_datapath/s_axis_4_tuser -color cyan
-add_wave $nf_datapath/s_axis_4_tvalid -color cyan
-add_wave $nf_datapath/s_axis_4_tready -color cyan
-add_wave $nf_datapath/s_axis_4_tlast -color cyan
+set sume_event_switch top_tb/top_sim/sume_event_switch_0/inst/
 
-add_wave_divider {output queues output signals}
-add_wave $nf_datapath/m_axis_0_tdata -color blue
-add_wave $nf_datapath/m_axis_0_tkeep -color blue
-add_wave $nf_datapath/m_axis_0_tuser -color blue
-add_wave $nf_datapath/m_axis_0_tvalid -color blue
-add_wave $nf_datapath/m_axis_0_tready -color blue
-add_wave $nf_datapath/m_axis_0_tlast -color blue
-add_wave $nf_datapath/m_axis_1_tdata -color gold
-add_wave $nf_datapath/m_axis_1_tkeep -color gold
-add_wave $nf_datapath/m_axis_1_tuser -color gold
-add_wave $nf_datapath/m_axis_1_tvalid -color gold
-add_wave $nf_datapath/m_axis_1_tready -color gold
-add_wave $nf_datapath/m_axis_1_tlast -color gold
-add_wave $nf_datapath/m_axis_2_tdata -color orange
-add_wave $nf_datapath/m_axis_2_tkeep -color orange
-add_wave $nf_datapath/m_axis_2_tuser -color orange
-add_wave $nf_datapath/m_axis_2_tvalid -color orange
-add_wave $nf_datapath/m_axis_2_tready -color orange
-add_wave $nf_datapath/m_axis_2_tlast -color orange
-add_wave $nf_datapath/m_axis_3_tdata -color purple
-add_wave $nf_datapath/m_axis_3_tkeep -color purple
-add_wave $nf_datapath/m_axis_3_tuser -color purple
-add_wave $nf_datapath/m_axis_3_tvalid -color purple
-add_wave $nf_datapath/m_axis_3_tready -color purple
-add_wave $nf_datapath/m_axis_3_tlast -color purple
-add_wave $nf_datapath/m_axis_4_tdata -color cyan
-add_wave $nf_datapath/m_axis_4_tkeep -color cyan
-add_wave $nf_datapath/m_axis_4_tuser -color cyan
-add_wave $nf_datapath/m_axis_4_tvalid -color cyan
-add_wave $nf_datapath/m_axis_4_tready -color cyan
-add_wave $nf_datapath/m_axis_4_tlast -color cyan
+add_wave_divider {SUME Event Switch Signals}
+add_wave $sume_event_switch
 
 run 65us
