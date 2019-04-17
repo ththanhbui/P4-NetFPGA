@@ -107,10 +107,6 @@ module @MODULE_NAME@
     localparam L2_META_FIFO_DEPTH = 6;
     localparam REG_DEPTH = 2**INDEX_WIDTH;
 
-    // write metadata FIFO state machine params
-    localparam WRITE_0 = 0;
-    localparam WRITE_1 = 1;
-
     // data plane state machine states
     localparam RMW_START = 0;
     localparam WAIT_BRAM = 1;
@@ -143,9 +139,9 @@ module @MODULE_NAME@
     wire    [INDEX_WIDTH-1:0]      index_pfifo;
     wire    [REG_WIDTH-1:0]        data_pfifo;
     wire    [OP_WIDTH-1:0]         opCode_pfifo;
-    wire    [INDEX_WIDTH-1:0]      index_mfifo;
-    wire    [REG_WIDTH-1:0]        data_mfifo;
-    wire    [OP_WIDTH-1:0]         opCode_mfifo;
+    wire    [INDEX_WIDTH-1:0]      index_mfifo  [1:0];
+    wire    [REG_WIDTH-1:0]        data_mfifo   [1:0];
+    wire    [OP_WIDTH-1:0]         opCode_mfifo [1:0];
 
     // packet event fifo signals
     wire empty_pfifo;
@@ -159,10 +155,6 @@ module @MODULE_NAME@
     reg  rd_en_mfifo;
     reg  wr_en_mfifo;
 
-    // signals for state machine to write metadata FIFO
-    reg                           mfifo_wr_state, mfifo_wr_state_next;
-    reg  [SINGLE_INPUT_WIDTH-1:0] din_mfifo_1_r, din_mfifo_1_r_next;
-
     // RMW state machine signals
     reg [L2_RMW_STATES-1:0]       rmw_state, rmw_state_next;
     reg [INDEX_WIDTH-1:0]         index, index_r, index_r_next;
@@ -172,6 +164,7 @@ module @MODULE_NAME@
     reg                           result_valid_r, result_valid_r_next;
     reg [1:0]                     cycle_cnt_r, cycle_cnt_r_next;
     reg                           set_result_valid_r, set_result_valid_r_next;
+    reg                           mfifo_slot_r, mfifo_slot_r_next;
 
     // control plane state machine signals
     reg [L2_CTRL_STATES-1:0]      c_state, c_state_next;
@@ -250,19 +243,19 @@ module @MODULE_NAME@
     /*-------------------------------------------------------*/
     fallthrough_small_fifo
     #(
-        .WIDTH(SINGLE_INPUT_WIDTH),
+        .WIDTH(2*SINGLE_INPUT_WIDTH),
         .MAX_DEPTH_BITS(L2_META_FIFO_DEPTH)
     )
     metadata_fifo
     (
        // Outputs
-       .dout                           ({index_mfifo, data_mfifo, opCode_mfifo}),
+       .dout                           ({index_mfifo[0], data_mfifo[0], opCode_mfifo[0], index_mfifo[1], data_mfifo[1], opCode_mfifo[1]}),
        .full                           (full_mfifo),
        .nearly_full                    (),
        .prog_full                      (),
        .empty                          (empty_mfifo),
        // Inputs
-       .din                            (din_mfifo),
+       .din                            ({din_mfifo_0, din_mfifo_1}),
        .wr_en                          (wr_en_mfifo),
        .rd_en                          (rd_en_mfifo),
        .reset                          (~resetn_sync),
@@ -327,46 +320,11 @@ module @MODULE_NAME@
     /*------------------------------*/
     /* Logic to write metadata FIFO */
     /*------------------------------*/
-    always @(*) begin
-        // defaults
-        mfifo_wr_state_next = mfifo_wr_state;
-
-        wr_en_mfifo = 0;
-        din_mfifo = 0;
-        din_mfifo_1_r_next = din_mfifo_1_r;
-
-        case(mfifo_wr_state)
-            WRITE_0: begin
-                if (~full_mfifo & req_in_valid & stateful_valid) begin
-                    if (meta_opCode_0_in != `NULL_OP) begin
-                        din_mfifo = din_mfifo_0;
-                        wr_en_mfifo = 1;
-                    end
-                    if (meta_opCode_1_in != `NULL_OP) begin
-                        din_mfifo_1_r_next = din_mfifo_1;
-                        mfifo_wr_state_next = WRITE_1;
-                    end
-                end
-            end
-
-            WRITE_1: begin
-                din_mfifo = din_mfifo_1_r;
-                wr_en_mfifo = ~full_mfifo;
-                mfifo_wr_state_next = WRITE_0;
-            end
-        endcase
-    end
-
-    always @(posedge clk_lookup) begin
-        if (~resetn_sync) begin
-            mfifo_wr_state <= WRITE_0;
-            din_mfifo_1_r <= 0;
-        end
-        else begin
-            mfifo_wr_state <= mfifo_wr_state_next;
-            din_mfifo_1_r <= din_mfifo_1_r_next;
-        end
-    end
+    // Requests will arrive on back-to-back cycles in the SDNet
+    // simulations so we need to be able to write to the FIFOs
+    // every cycle
+    assign wr_en_mfifo = ~full_mfifo & req_in_valid & stateful_valid
+                         & ( (meta_opCode_0_in != `NULL_OP) || (meta_opCode_1_in != `NULL_OP) );
 
     /*--------------------------------------------------*/
     /* Logic to read FIFOs, perform RMW operations, and */
@@ -379,6 +337,9 @@ module @MODULE_NAME@
         // FIFO read signals
         rd_en_pfifo = 0;
         rd_en_mfifo = 0;
+
+        // track which metadata fifo slot to read
+        mfifo_slot_r_next = mfifo_slot_r;
 
         // BRAM read signals
         d_addr_in_bram = 0;
@@ -419,12 +380,20 @@ module @MODULE_NAME@
                     opCode = opCode_pfifo;
                     data = data_pfifo;
                 end
-                else if (~empty_mfifo & (index_mfifo < REG_DEPTH)) begin
+                else if (~empty_mfifo & (index_mfifo[mfifo_slot_r] < REG_DEPTH)) begin
                     // perform a RMW operation from the metadata FIFO
-                    rd_en_mfifo = 1;
-                    index = index_mfifo;
-                    opCode = opCode_mfifo;
-                    data = data_mfifo;
+                    index = index_mfifo[mfifo_slot_r];
+                    opCode = opCode_mfifo[mfifo_slot_r];
+                    data = data_mfifo[mfifo_slot_r];
+                    if ( (mfifo_slot_r == 1) || ( (mfifo_slot_r == 0) && (opCode_mfifo[1] == `NULL_OP) ) ) begin
+                        // only read from the metadata FIFO if we are already at the second slot or we are at
+                        // the first slot and there's nothing to do in the next slot
+                        rd_en_mfifo = 1;
+                        mfifo_slot_r_next = 0;
+                    end
+                    else begin
+                        mfifo_slot_r_next = 1;
+                    end
                 end
 
                 // next state logic
@@ -499,6 +468,7 @@ module @MODULE_NAME@
             d_addr_in_bram_r <= 0;
             cycle_cnt_r <= 0;
             set_result_valid_r <= 0;
+            mfifo_slot_r <= 0;
         end
         else begin
             rmw_state <= rmw_state_next;
@@ -510,6 +480,7 @@ module @MODULE_NAME@
             d_addr_in_bram_r <= d_addr_in_bram_r_next;
             cycle_cnt_r <= cycle_cnt_r_next;
             set_result_valid_r <= set_result_valid_r_next;
+            mfifo_slot_r <= mfifo_slot_r_next;
         end
     end
 
