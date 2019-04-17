@@ -36,49 +36,32 @@
 // one-hot encoded: {DMA, NF3, DMA, NF2, DMA, NF1, DMA, NF0}
 typedef bit<8> port_t;
 
-/*
-Output metadata format:
-[15:0]    pkt_len        (bit<32>)
-[23:16]   src_port       (bit<8>)
-[31:24]   dst_port       (bit<8>)
-[63:32]   enq_data       (bit<32>)
-[95:64]   deq_data       (bit<32>)
-[127:96]  drop_data      (bit<32>)
-[135:128] enq_port       (bit<8>)
-[143:136] deq_port       (bit<8>)
-[151:144] drop_port      (bit<8>)
-[183:152] timer_period   (bit<32>) - measured in 20ns increments
-[231:184] timer_now      (bit<48>) - measured in 20ns increments
-[235:232] link_status    (bit<4>) - <nf3>-<nf2>-<nf1>-<nf0>
-[236]     pkt_trigger    (bit<1>)
-[237]     enq_trigger    (bit<1>)
-[238]     deq_trigger    (bit<1>)
-[239]     drop_trigger   (bit<1>)
-[240]     timer_trigger  (bit<1>)
-[241]     link_trigger   (bit<1>)
-[242]     gen_packet     (bit<1>)
-[247:243] unused         (bit<5>)
-*/
-
 /* standard sume switch metadata */
 struct sume_metadata_t {
     bit<5> unused;
+    // request a packet to be generated
     bit<1> gen_packet;
+    // *_trigger fields indicate when a particular event has fired
     bit<1> link_trigger;
     bit<1> timer_trigger;
     bit<1> drop_trigger;
     bit<1> deq_trigger;
     bit<1> enq_trigger;
     bit<1> pkt_trigger;
+    // Current link status (one-hot)
     bit<4> link_status;
+    // time when timer event fired (20ns resolution)
     bit<48> timer_now;
+    // period at which timer events are configured to fire (20ns resolution)
     bit<32> timer_period;
+    // ports and user metadata for enq/deq/drop events
     port_t drop_port;
     port_t deq_port;
     port_t enq_port;
     bit<32> drop_data;
     bit<32> deq_data;
     bit<32> enq_data;
+    // standard metadata fields
     port_t dst_port;
     port_t src_port;
     bit<16> pkt_len;
