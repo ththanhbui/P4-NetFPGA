@@ -219,7 +219,7 @@ module event_output_queues
 
    reg [PORT_WIDTH-1:0]          deq_port;
    reg [USER_DEQ_DATA_WIDTH-1:0] user_deq_data;
-   reg [DEQ_DATA_WIDTH-1:0]      deq_event_din;
+   wire [DEQ_DATA_WIDTH-1:0]     deq_event_din;
    reg                           deq_event_wr;
    wire                          deq_event_full;
    wire                          deq_event_empty;
@@ -228,7 +228,7 @@ module event_output_queues
 
    reg [PORT_WIDTH-1:0]           drop_port;
    reg [USER_DROP_DATA_WIDTH-1:0] user_drop_data;
-   reg [DROP_DATA_WIDTH-1:0]      s_drop_event_data;
+   wire [DROP_DATA_WIDTH-1:0]     s_drop_event_data;
    reg                            drop_event_wr;
    wire                           drop_event_full;
    wire                           drop_event_empty;
@@ -462,6 +462,8 @@ module event_output_queues
 
     assign m_deq_event_valid = ~deq_event_empty;
 
+    assign deq_event_din = {user_deq_data, deq_port};
+
     integer j;
 
     /* Dequeue Event Logic */
@@ -474,7 +476,6 @@ module event_output_queues
         deq_port_fifo_rd = 0;
         user_deq_data = 0;
         deq_port = 0;
-        deq_event_din = {user_deq_data, deq_port};
 
         // pick the first non-empty fifo (if any)
         for (j=0; j<NUM_PORTS; j=j+1) begin
@@ -499,6 +500,7 @@ module event_output_queues
                 end
             end
         end
+
     end
 
     // -------------------- Drop Event Logic ----------------------
@@ -523,6 +525,8 @@ module event_output_queues
 
     assign m_drop_event_valid = ~drop_event_empty;
 
+    assign s_drop_event_data = {user_drop_data, drop_port};
+
     /* Drop Event State Machine */
     always @(*) begin
         // defaults
@@ -531,7 +535,6 @@ module event_output_queues
         drop_event_wr = 0;
         user_drop_data = s_axis_tuser[USER_DROP_DATA_HI:USER_DROP_DATA_LO];
         drop_port = 0;
-        s_drop_event_data = {user_drop_data, drop_port};
 
         case(drop_state)
             DROP_START: begin

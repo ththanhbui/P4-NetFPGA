@@ -111,7 +111,7 @@ extern_data = {
                               "@HASH_COUNT@" : "annotation(BloomFilterHashCount)"}
 },
 
-"reg_multi_raws" : {"hdl_template_file": "externs/reg_raw/hdl/EXTERN_reg_multi_raws_template.v",
+"reg_multi_raws" : {"hdl_template_file": "externs/reg_multi_raws/hdl/EXTERN_reg_multi_raws_template.v",
                     "replacements": {"@EXTERN_NAME@" : "extern_name",
                               "@MODULE_NAME@" : "module_name",
                               "@PREFIX_NAME@" : "prefix_name",

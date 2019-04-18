@@ -173,4 +173,10 @@ set sume_event_switch top_tb/top_sim/sume_event_switch_0/inst/
 add_wave_divider {SUME Event Switch Signals}
 add_wave $sume_event_switch
 
+add_wave_divider {Event Output Queues Signals}
+add_wave $sume_event_switch/output_queues_inst/
+
+add_wave_divider {Qsize Reg Multi RAWS Extern}
+add_wave $sume_event_switch/SimpleSumeSwitch_inst/qsize_reg_multi_raws_0/
+
 run 65us

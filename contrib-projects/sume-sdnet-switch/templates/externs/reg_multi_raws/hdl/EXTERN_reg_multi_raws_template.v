@@ -153,7 +153,7 @@ module @MODULE_NAME@
     wire empty_mfifo;
     wire full_mfifo;
     reg  rd_en_mfifo;
-    reg  wr_en_mfifo;
+    wire wr_en_mfifo;
 
     // RMW state machine signals
     reg [L2_RMW_STATES-1:0]       rmw_state, rmw_state_next;
@@ -174,13 +174,11 @@ module @MODULE_NAME@
 
     // BRAM signals
     reg                       c_we_bram;
-    reg                       c_en_bram;
     reg   [INDEX_WIDTH-1:0]   c_addr_in_bram, c_addr_in_bram_r, c_addr_in_bram_r_next;
     reg   [REG_WIDTH-1:0]     c_data_in_bram;
     wire  [REG_WIDTH-1:0]     c_data_out_bram;
 
     reg                      d_we_bram;
-    reg                      d_en_bram;
     reg  [INDEX_WIDTH-1:0]   d_addr_in_bram, d_addr_in_bram_r, d_addr_in_bram_r_next;
     reg  [REG_WIDTH-1:0]     d_data_in_bram;
     wire [REG_WIDTH-1:0]     d_data_out_bram;
@@ -417,8 +415,13 @@ module @MODULE_NAME@
                     opCode_r_next = opCode;
                     rmw_state_next = WAIT_BRAM;
                 end
-                else if (opCode != `NULL_OP) begin
-                    $display("ERROR: rmw_state = RMW_START, unsupported opCode: %0d\n", opCode);
+                else begin
+                    // still need to set result_valid reg
+                    result_valid_r_next = rd_en_pfifo;
+                    set_result_valid_r_next = 0;
+                    if (opCode != `NULL_OP) begin
+                        $display("ERROR: rmw_state = RMW_START, unsupported opCode: %0d\n", opCode);
+                    end
                 end
             end
 
@@ -606,7 +609,6 @@ module @MODULE_NAME@
     always @(*) begin
        // default values
        c_state_next   = c_state;
-       c_en_bram = 1;
 
        c_we_bram = 0;
        c_addr_in_bram = c_addr_in_bram_r;
