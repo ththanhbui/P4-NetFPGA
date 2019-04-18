@@ -364,7 +364,5 @@ control TopDeparser(packet_out b,
     }
 }
 
-
 // Instantiate the switch
 SimpleSumeSwitch(TopParser(), TopPipe(), TopDeparser()) main;
-
