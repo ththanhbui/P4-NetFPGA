@@ -1,5 +1,5 @@
 //
-// Copyright (c) 2017 Stephen Ibanez
+// Copyright (c) 2019 Stephen Ibanez
 // All rights reserved.
 //
 // This software was developed by Stanford University and the University of Cambridge Computer Laboratory 
@@ -27,7 +27,12 @@
 // @NETFPGA_LICENSE_HEADER_END@
 //
 
-table_cam_add_entry lookup_dst_port set_dst_port 0b00000001 => 0b00000100
-table_cam_add_entry lookup_dst_port set_dst_port 0b00000100 => 0b00000001
-table_cam_add_entry lookup_dst_port set_dst_port 0b00010000 => 0b01000000
-table_cam_add_entry lookup_dst_port set_dst_port 0b01000000 => 0b00010000
+table_cam_add_entry ipv4_forward set_dst_port 10.0.0.1 => 0b00000001
+table_cam_add_entry ipv4_forward set_dst_port 10.0.0.2 => 0b00000100
+table_cam_add_entry ipv4_forward set_dst_port 10.0.0.3 => 0b00010000
+
+table_cam_add_entry lookup_pkt_flowID set_pkt_flowID 10.0.0.1 => 0 
+table_cam_add_entry lookup_pkt_flowID set_pkt_flowID 10.0.0.2 => 1 
+table_cam_add_entry lookup_pkt_flowID set_pkt_flowID 10.0.0.3 => 2 
+
+

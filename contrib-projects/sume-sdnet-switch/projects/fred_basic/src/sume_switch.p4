@@ -58,9 +58,16 @@ struct sume_metadata_t {
     port_t drop_port;
     port_t deq_port;
     port_t enq_port;
+    //// USER DROP DATA (32 bits) ////
     bit<32> drop_data;
-    bit<32> deq_data;
-    bit<32> enq_data;
+    //// USER DEQ DATA (32 bits) ////
+    bit<8> deq_flowID;
+    bit<16> deq_pkt_len;
+    bit<8> deq_unused;
+    //// USER ENQ DATA (32 bits) ////
+    bit<8> enq_flowID;
+    bit<16> enq_pkt_len;
+    bit<8> enq_unused;
     // standard metadata fields
     port_t dst_port;
     port_t src_port;
