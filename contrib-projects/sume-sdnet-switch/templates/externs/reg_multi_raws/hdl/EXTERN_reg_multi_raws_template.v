@@ -296,9 +296,9 @@ module @MODULE_NAME@
     assign req_in_valid       = tuple_in_@EXTERN_NAME@_input_VALID;
 
     assign {stateful_valid,
-            din_mfifo_1,
+            din_pfifo,
             din_mfifo_0,
-            din_pfifo}        = tuple_in_@EXTERN_NAME@_input_DATA;
+            din_mfifo_1}      = tuple_in_@EXTERN_NAME@_input_DATA;
 
     assign {pkt_index_in,
             pkt_data_in,
