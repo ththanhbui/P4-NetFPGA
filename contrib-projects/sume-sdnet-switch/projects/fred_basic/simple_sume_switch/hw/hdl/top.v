@@ -560,7 +560,6 @@ assign axi_datapath_resetn = axis_resetn;
 
 sume_event_switch_ip
 #(
-    .C_S_AXI_ADDR_WIDTH (12),
     // Master AXI Stream Data Width
     .C_M_AXIS_DATA_WIDTH (C_DATA_WIDTH),
     .C_S_AXIS_DATA_WIDTH (C_DATA_WIDTH),
