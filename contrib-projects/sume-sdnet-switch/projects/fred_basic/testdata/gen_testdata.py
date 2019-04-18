@@ -66,7 +66,7 @@ def applyPkt(pkt, ingress, time):
     sss_sdnet_tuples.sume_tuple_in['src_port'] = nf_port_map[ingress]
     sss_sdnet_tuples.sume_tuple_expect['pkt_trigger'] = 1 
     sss_sdnet_tuples.sume_tuple_expect['pkt_len'] = len(pkt) 
-    sss_sdnet_tuples.sume_tuple_expect['src_port'] = nf_port_map[ingress]
+    sss_sdnet_tuples.sume_tuple_expect['src_port'] = nf_port_map[ingress] 
     pkt.time = time
     nf_applied[nf_id_map[ingress]].append(pkt)
 
@@ -101,18 +101,24 @@ def write_pcap_files():
 # generate testdata #
 #####################
 
-MAC1 = "08:01:01:01:01:01"
-MAC2 = "08:02:02:02:02:02"
+MAC1 = "08:00:00:00:00:01"
+MAC2 = "08:00:00:00:00:02"
+MAC3 = "08:00:00:00:00:03"
+IP1 = "10.0.0.1"
+IP2 = "10.0.0.2"
+IP3 = "10.0.0.3"
 
 pktCnt = 0
 
-pkt = Ether(dst=MAC2, src=MAC1)
+pkt = Ether(dst=MAC3, src=MAC1) / IP(dst=IP3, src=IP1)
 pkt = pad_pkt(pkt, 64)
 applyPkt(pkt, 'nf0', pktCnt)
 pktCnt += 1
-pkt = Ether(dst=MAC2, src=MAC1)
-pkt = pad_pkt(pkt, 64)
-expPkt(pkt, 'nf1')
+sss_sdnet_tuples.sume_tuple_expect['enq_flowID'] = 0 
+sss_sdnet_tuples.sume_tuple_expect['enq_pkt_len'] = len(pkt)
+sss_sdnet_tuples.sume_tuple_expect['deq_flowID'] = 0 
+sss_sdnet_tuples.sume_tuple_expect['deq_pkt_len'] = len(pkt)
+expPkt(pkt, 'nf2')
 
 write_pcap_files()
 
