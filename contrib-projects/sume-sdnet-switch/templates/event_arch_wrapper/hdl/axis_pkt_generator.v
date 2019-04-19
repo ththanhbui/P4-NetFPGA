@@ -134,7 +134,7 @@ module axis_pkt_generator
         // defaults
         state_next = state;
 
-        etherType = 16'h0101; // an arbitrary choice
+        etherType = 16'h2121; // an arbitrary choice
 
         m_axis_tvalid = 0;
         m_axis_tdata = 0;

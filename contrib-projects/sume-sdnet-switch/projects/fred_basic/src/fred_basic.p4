@@ -51,7 +51,7 @@ typedef bit<8> FlowID_t;
 typedef bit<32> Qsize_t;
 
 const bit<16> IPV4_TYPE = 0x0800;
-const bit<16> LOG_TYPE  = 0x0101;
+const bit<16> LOG_TYPE  = 0x2121;
 const bit<16> NULL_TYPE = 0x0000;
 
 const port_t LOG_PORT = 0b01000000;

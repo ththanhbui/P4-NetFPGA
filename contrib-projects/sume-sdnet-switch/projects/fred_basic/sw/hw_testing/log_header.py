@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2017 Stephen Ibanez
+# Copyright (c) 2019 Stephen Ibanez
 # All rights reserved.
 #
 # This software was developed by Stanford University and the University of Cambridge Computer Laboratory 
@@ -31,17 +31,17 @@
 from scapy.all import *
 import sys, os
 
-LOG_TYPE = 0x0101
+LOG_TYPE = 0x2121
 
 class Log(Packet):
     name = "Log"
     fields_desc = [
         ByteField("flowID", 0),
         IntField("qsize", 0),
-        LongField("time", 0)
+        LongField("tstamp", 0)
     ]
     def mysummary(self):
-        return self.sprintf("flowID=%flowID% qsize=%qisze% time=%time%")
+        return self.sprintf("flowID=%flowID% qsize=%qisze% tstamp=%tstamp%")
 
 bind_layers(Ether, Log, type=LOG_TYPE)
 bind_layers(Log, Raw)
