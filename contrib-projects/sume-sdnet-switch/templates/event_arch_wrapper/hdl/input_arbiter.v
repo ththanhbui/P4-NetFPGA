@@ -316,7 +316,7 @@ module input_arbiter
             end
 
             // state transition logic
-            if ( (out_fifo_wr_en & out_fifo_tlast) || in_fifo_empty[cur_queue]) begin
+            if (out_fifo_wr_en & out_fifo_tlast) begin
                 state_next = IDLE;
             end
         end // case: WR_PKT
