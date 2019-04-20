@@ -70,6 +70,10 @@ class PXTable(object):
             print >> sys.stderr, "ERROR: not enough fields provided to complete _hexify()"
             sys.exit(1)
 
+        # convert field_vals to int
+        field_vals = map(convert_to_int, field_vals)
+
+        # combine field_vals using field sizes
         ret = 0
         for val, bits in zip(field_vals, field_sizes):
             mask = 2**bits -1
@@ -282,18 +286,25 @@ def ip2int(addr):
 def mac2int(addr):
     return int(addr.translate(None, ":"), 16)
 
-def convert_to_int(string):
-    mac_fmat = r'([\dA-Fa-f]{2}:){5}[\dA-Fa-f]{2}'
-    ip_fmat = r'([0-9]{1,3}\.){3}[0-9]{1,3}'
-    if re.match(mac_fmat, string):
-        return mac2int(string)
-    elif re.match(ip_fmat, string):
-        return ip2int(string)
+def convert_to_int(val):
+    if type(val) == str:
+        mac_fmat = r'([\dA-Fa-f]{2}:){5}[\dA-Fa-f]{2}'
+        ip_fmat = r'([0-9]{1,3}\.){3}[0-9]{1,3}'
+        if re.match(mac_fmat, val):
+            return mac2int(val)
+        elif re.match(ip_fmat, val):
+            return ip2int(val)
+        else:
+            try:
+                return int(val, 0)
+            except ValueError as e:
+                print >> sys.stderr, "ERROR: failed to convert {} of type {} to an integer".format(val, type(val))
+                sys.exit(1)
+    elif type(val) == int:
+        return val
     else:
-        try:
-            return int(string, 0)
-        except ValueError as e:
-            print >> sys.stderr, "ERROR: failed to convert {} to an integer".format(string) 
+        print >> sys.stderr, "ERROR: failed to convert {} of type {} to an integer".format(val, type(val))
+        sys.exit(1)
 
 def parse_table_cam_add_entry(line):
     stmt = line.split('=>')
@@ -309,8 +320,8 @@ def parse_table_cam_add_entry(line):
         sys.exit(1)
     table_name = lhs[0]
     action_name = lhs[1]
-    keys = map(convert_to_int, lhs[2:])
-    action_data = map(convert_to_int, rhs)
+    keys = lhs[2:]
+    action_data = rhs
     return (table_name, keys, action_name, action_data)
 
 def parse_table_tcam_add_entry(line):
@@ -334,10 +345,10 @@ def parse_table_tcam_add_entry(line):
         if (len(key_mask) != 2):
             print >> sys.stderr, "ERROR: must specify exactly one mask for each key"
             sys.exit(1)
-        keys.append(convert_to_int(key_mask[0]))
-        masks.append(convert_to_int(key_mask[1]))
+        keys.append(key_mask[0])
+        masks.append(key_mask[1])
     rhs = searchObj.groupdict()['action_data'].split()
-    action_data = map(convert_to_int, rhs)
+    action_data = rhs
     return (table_name, address, keys, masks, action_name, action_data)
 
 
@@ -354,13 +365,9 @@ def parse_table_lpm_add_entry(line):
         print >> sys.stderr, "ERROR: must specify exactly one length for each prefix"
         sys.exit(1)
     prefix = prefix_len[0]
-    try:
-        length = convert_to_int(prefix_len[1])
-    except:
-        print >> sys.stderr, "ERROR: could not convert prefix length to int"
-        sys.exit(1)
+    length = prefix_len[1]
     rhs = searchObj.groupdict()['action_data'].split()
-    action_data = map(convert_to_int, rhs)
+    action_data = rhs
     return (table_name, prefix, length, action_name, action_data)
 
 """
