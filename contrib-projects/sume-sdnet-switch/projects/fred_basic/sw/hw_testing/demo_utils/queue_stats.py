@@ -51,7 +51,7 @@ class QueueStats(object):
         for flowID in self.qsizes.keys():
             linestyle, color = line_generator.next()
             plt.plot(self.times[flowID], self.qsizes[flowID], linewidth=5, label='Flow {}'.format(flowID), linestyle=linestyle, marker='o')
-        plt.xlabel('Time (ns)')
+        plt.xlabel('Time (ms)')
         plt.ylabel('Queue Occupancy (B)')
         plt.legend(loc='upper left')
 
