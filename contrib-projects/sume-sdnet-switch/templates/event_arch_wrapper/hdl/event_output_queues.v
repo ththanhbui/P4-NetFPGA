@@ -172,7 +172,7 @@ module event_output_queues
    localparam DROP_FINISH_PKT = 1;
    localparam L2_DROP_STATES  = 1;
 
-   localparam MAX_DEPTH = 4096; // measured in 32B words
+   localparam MAX_DEPTH = 8192; // measured in 32B words
    localparam L2_MAX_DEPTH = log2(MAX_DEPTH);
 
    localparam MAX_PKTS = MAX_DEPTH/2; // min pkt size is 64B
