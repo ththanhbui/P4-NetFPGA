@@ -121,7 +121,6 @@ module @MODULE_NAME@
 
     // data plane state machine signals
     reg                           d_state, d_state_next;
-    reg [REG_WIDTH-1:0]           result_r, result_r_next;
     reg [1:0]                     cycle_cnt, cycle_cnt_next;
     reg [INDEX_WIDTH-1:0]         index_r, index_r_next;
     reg [REG_WIDTH-1:0]           newVal_r, newVal_r_next;

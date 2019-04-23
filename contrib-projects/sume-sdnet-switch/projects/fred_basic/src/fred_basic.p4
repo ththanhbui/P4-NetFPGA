@@ -62,6 +62,12 @@ const port_t LOG_PORT = 0b01000000;
 #define REG_SUB    8w3
 #define REG_NULL   8w4
 
+// operation to perform write but return the
+// old value in the register rather than the
+// new value
+// used for the lastSample extern
+#define REG_READ_WRITE  8w2
+
 /* period register:
  *   - the period at which timer events fire
  */
@@ -71,16 +77,6 @@ extern void period_reg_rw(in bit<1> index,
                           in bit<32> newVal,
                           in bit<8> opCode,
                           out bit<32> result);
-
-/* thresh register:
- *   - the qsize threshold over which to drop packets 
- */
-@Xilinx_MaxLatency(64)
-@Xilinx_ControlWidth(1)
-extern void thresh_reg_rw(in bit<1> index,
-                         in Qsize_t newVal,
-                         in bit<8> opCode,
-                         out Qsize_t result);
 
 /* lastFlowID register:
  *   - Remember the last flowID that was queried
@@ -92,6 +88,16 @@ extern void lastFlowID_reg_raw(in bit<1> index,
                                in bit<1> incVal,
                                in bit<8> opCode,
                                out bit<1> result);
+
+/* lastSample register:
+ *   - the last qsize sample per flow
+ */
+@Xilinx_MaxLatency(64)
+@Xilinx_ControlWidth(8)
+extern void lastSample_reg_rw(in FlowID_t index,
+                              in bit<32> newVal,
+                              in bit<8> opCode,
+                              out bit<32> result);
 
 /* qsize register:
  *   - Track the per-flow queue occupancy using enqueue and dequeue events
@@ -199,6 +205,8 @@ control TopPipe(inout Parsed_packet p,
 
     // metadata used for IP and Log packets
     FlowID_t pkt_flowID;
+    // Buffer occupancy threshold at which to drop packets
+    Qsize_t fred_thresh;
 
     action set_dst_port(port_t port) {
         sume_metadata.dst_port = port;
@@ -228,6 +236,20 @@ control TopPipe(inout Parsed_packet p,
         default_action = NoAction;
     }
 
+    action set_fred_thresh(Qsize_t thresh) {
+        fred_thresh = thresh;
+    }
+
+    table lookup_thresh {
+        key = { pkt_flowID : exact; }
+        actions = {
+            set_fred_thresh;
+            NoAction;
+        }
+        size = 64;
+        default_action = NoAction;
+    }
+
     /* Event types to handle:
      *   - IPv4 packets => query qsize
      *   - Log packets => query qsize
@@ -238,6 +260,7 @@ control TopPipe(inout Parsed_packet p,
      */
     apply {
         pkt_flowID = 0; // default initialization
+        fred_thresh = 0; // default initialization
 
         // configure the period of the timer events
         period_reg_rw(0, 0, REG_READ, sume_metadata.timer_period);
@@ -316,11 +339,13 @@ control TopPipe(inout Parsed_packet p,
 
         // implement AQM policy using qsize
         if (p.ip.isValid()) {
-            Qsize_t fred_thresh;
-            thresh_reg_rw(0, 0, REG_READ, fred_thresh);
-            if (qsize > fred_thresh) {
-                // drop packet
-                sume_metadata.dst_port = 0;
+            // only apply the threshold to flows that actually have a
+            // threshold assigned to them
+            if (lookup_thresh.apply().hit) {
+                if (qsize > fred_thresh) {
+                    // drop packet
+                    sume_metadata.dst_port = 0;
+                }
             }
         }
 
@@ -329,6 +354,13 @@ control TopPipe(inout Parsed_packet p,
             p.log.flowID = pkt_flowID;
             p.log.qsize = qsize;
             now_timestamp(1, p.log.time);
+            Qsize_t prev_qsize;
+            // record this qsize sample
+            lastSample_reg_rw(pkt_flowID, qsize, REG_READ_WRITE, prev_qsize);
+            if (qsize == prev_qsize) {
+                // only transmit log packets that contain new samples
+                sume_metadata.dst_port = 0;
+            }
         }
 
         // overwrite user enq and deq metadata
