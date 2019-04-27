@@ -4,7 +4,7 @@ Used to modify the digest_data of expected packets:
  - modify the digest_data.tuser field
 """
 
-def compute_tuple(ip_src, ip_dst, protocol, src_port, dst_port): # 32 - 32 - 8 - 16 - 16 bits
+def compute_flow_number(ip_src, ip_dst, protocol, src_port, dst_port): # 32 - 32 - 8 - 16 - 16 bits
     ip_src = ip_src.split('.')      # 32 bits
     ip_dst = ip_dst.split('.')      # 32 bits
     string = '{:08b}{:08b}{:08b}{:08b}{:08b}{:08b}{:08b}{:08b}{:08b}{:016b}{:016b}'.format(
@@ -37,6 +37,6 @@ if __name__ == "__main__":
     ip_dst = '10.0.0.2'
     src_port = 55
     dst_port = 75
-    print(compute_tuple(ip_src, ip_dst, 6, src_port, dst_port))
+    print(compute_flow_number(ip_src, ip_dst, 6, src_port, dst_port))
     test = 0b00001100
     print(compute_tuser(3, 0b00000001, 0b00000000, 0b111111111))

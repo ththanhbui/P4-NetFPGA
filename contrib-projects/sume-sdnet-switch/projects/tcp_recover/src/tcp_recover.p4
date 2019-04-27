@@ -215,6 +215,7 @@ parser TopParser(packet_in b,
                  out user_metadata_t user_metadata,
                  out digest_data_t digest_data,
                  inout sume_metadata_t sume_metadata) {
+    
     state start {
         b.extract(p.ethernet);
         user_metadata.unused = 0;
@@ -289,16 +290,6 @@ control TopPipe(inout Parsed_packet p,
         }
     }
 
-    table retransmit {
-        key = { digest_data.flow_id: exact; }
-
-        actions = {
-            NoAction;
-        }
-        size = 64;
-        default_action = NoAction;
-    }
-
     table forward {
         key = { p.ethernet.dstAddr: exact; }
 
@@ -310,9 +301,19 @@ control TopPipe(inout Parsed_packet p,
         default_action = NoAction;
     }
 
+    table retransmit {
+        key = { digest_data.flow_id: exact; }
+
+        actions = {
+            NoAction;
+        }
+        size = 64;
+        default_action = NoAction;
+    }
+
     apply {
         if (!forward.apply().hit) {
-            sume_metadata.drop = 1;
+            sume_metadata.dst_port = 0;
         } else {
             if (p.tcp.isValid()) {
                 bit<1> ack_;

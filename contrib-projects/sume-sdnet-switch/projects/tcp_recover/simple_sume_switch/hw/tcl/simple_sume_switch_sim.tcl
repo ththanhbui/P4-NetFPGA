@@ -336,4 +336,4 @@ add_wave $nf_sume_sdnet_ip/out_pkt_len
 add_wave $nf_sume_sdnet_ip/out_src_port
 add_wave $nf_sume_sdnet_ip/out_dst_port
 
-run 65us
+run 30us
