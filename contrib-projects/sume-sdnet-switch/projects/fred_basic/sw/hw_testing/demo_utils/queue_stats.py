@@ -4,6 +4,8 @@ import matplotlib.pyplot as plt
 
 import sys, os
 
+QSIZE = 2**18
+
 class QueueStats(object):
     def __init__(self, log_pkt_list, start_time):
         """
@@ -51,6 +53,7 @@ class QueueStats(object):
         for flowID in self.qsizes.keys():
             linestyle, color = line_generator.next()
             plt.plot(self.times[flowID], self.qsizes[flowID], linewidth=5, label='Flow {}'.format(flowID), linestyle=linestyle, marker='o')
+        plt.axhline(y=QSIZE, color='r', linestyle=':', linewidth=3)
         plt.xlabel('Time (ms)')
         plt.ylabel('Queue Occupancy (B)')
         plt.legend(loc='upper left')
