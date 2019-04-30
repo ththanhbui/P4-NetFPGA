@@ -40,7 +40,7 @@ def parse_log_pkts(pcap_file):
 
 def main():
     parser = argparse.ArgumentParser()
-    parser.add_argument('--pcap', type=str, default='test_log.pcap', help="the pcap trace to plot")
+    parser.add_argument('--pcap', type=str, default='pcaps/log.pcap', help="the pcap trace to plot")
     args = parser.parse_args()
 
     # parse the logged pcap files

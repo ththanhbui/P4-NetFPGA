@@ -4,6 +4,7 @@
 ip address add 10.0.0.2/24 dev eth2
 ip address add 10.0.1.2/24 dev eth2
 
+ifconfig eth1 up
 ifconfig eth2 up
 
 # Add static ARP entries
