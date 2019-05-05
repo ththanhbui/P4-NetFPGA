@@ -180,13 +180,6 @@ module event_output_queues
    localparam L2_MAX_PKTS = log2(MAX_PKTS);
    localparam BUFFER_THRESHOLD = MAX_DEPTH-MAX_PKT_SIZE;
 
-   // TODO: temporary hack to make NF2 queue larger for testing purposes
-   localparam NF2_MAX_DEPTH = 8192; // measured in 32B words
-   localparam NF2_L2_MAX_DEPTH = log2(NF2_MAX_DEPTH);
-   localparam NF2_MAX_PKTS = NF2_MAX_DEPTH/2; // min pkt size is 64B
-   localparam NF2_L2_MAX_PKTS = log2(NF2_MAX_PKTS);
-   localparam NF2_BUFFER_THRESHOLD = NF2_MAX_DEPTH-MAX_PKT_SIZE;
-
    localparam L2_MAX_ENQ_EVENTS = 7;
    localparam L2_MAX_DEQ_EVENTS = 7;
    localparam L2_MAX_DROP_EVENTS = 7;
@@ -256,8 +249,8 @@ module event_output_queues
        fallthrough_small_fifo 
           #(
               .WIDTH(C_M_AXIS_DATA_WIDTH+C_M_AXIS_DATA_WIDTH/8+1),
-              .MAX_DEPTH_BITS( (i==2) ? NF2_L2_MAX_DEPTH : L2_MAX_DEPTH),
-              .PROG_FULL_THRESHOLD( (i==2) ? NF2_BUFFER_THRESHOLD : BUFFER_THRESHOLD)
+              .MAX_DEPTH_BITS(L2_MAX_DEPTH),
+              .PROG_FULL_THRESHOLD(BUFFER_THRESHOLD)
           )
           data_fifo
             (.din         ({s_axis_tlast, s_axis_tkeep, s_axis_tdata}),     // Data in
@@ -275,7 +268,7 @@ module event_output_queues
        fallthrough_small_fifo 
           #(
               .WIDTH(C_M_AXIS_TUSER_WIDTH),
-              .MAX_DEPTH_BITS( (i==2) ? NF2_L2_MAX_PKTS : L2_MAX_PKTS)
+              .MAX_DEPTH_BITS(L2_MAX_PKTS)
           )
           meta_fifo
             (.din         (s_axis_tuser),     // Data in
