@@ -31,7 +31,7 @@
 # Makefile to build the SUME-SDNet module / wrapper IP for use in the SUME project 
 
 SDNET_OUT_DIR=sume_event_switch_ip
-WRAPPER_DIR=event_arch_wrapper
+WRAPPER_DIR=sume_event_wrapper
 
 PX=sdnet
 PX_FLAGS=-busType axi -busWidth 256 -singlecontrolport -workDir ${SDNET_OUT_DIR} -altVivadoScripts
