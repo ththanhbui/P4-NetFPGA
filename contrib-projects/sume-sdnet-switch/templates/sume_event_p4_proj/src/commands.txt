@@ -27,3 +27,6 @@
 // @NETFPGA_LICENSE_HEADER_END@
 //
 
+table_cam_add_entry ipv4_forward set_dst_port 10.0.0.1 => 0b00000001
+table_cam_add_entry ipv4_forward set_dst_port 10.0.0.2 => 0b00000100
+

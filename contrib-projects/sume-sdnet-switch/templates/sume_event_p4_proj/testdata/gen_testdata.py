@@ -101,6 +101,18 @@ def write_pcap_files():
 # generate testdata #
 #####################
 
+MAC1 = "08:00:00:00:00:01"
+MAC2 = "08:00:00:00:00:02"
+IP1 = "10.0.0.1"
+IP2 = "10.0.0.2"
+
+pktCnt = 0
+
+pkt = Ether(dst=MAC2, src=MAC1) / IP(dst=IP2, src=IP1)
+pkt = pad_pkt(pkt, 64)
+applyPkt(pkt, 'nf0', pktCnt)
+pktCnt += 1
+expPkt(pkt, 'nf1')
 
 write_pcap_files()
 
