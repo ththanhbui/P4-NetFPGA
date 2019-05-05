@@ -42,7 +42,7 @@
 
 
 #include <core.p4>
-#include "sume_switch.p4"
+#include "sume_event_switch.p4"
 
 typedef bit<48> EthAddr_t; 
 typedef bit<32> IPv4Addr_t;
