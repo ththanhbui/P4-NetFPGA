@@ -36,6 +36,9 @@
 #include "sume_event_switch.p4"
 
 const bit<16> IPV4_TYPE = 0x0800;
+const bit<16> LOG_TYPE  = 0x2121;
+
+const port_t LOG_PORT = 0b01000000;
 
 #define NUM_SHIFT_REGS 4
 #define L2_NUM_SHIFT_REGS 2
@@ -62,6 +65,17 @@ extern void period_reg_rw(in bit<1> index,
                           in bit<32> newVal,
                           in bit<8> opCode,
                           out bit<32> result);
+
+/* logFid register:
+ *   - Track the flowID to sample with the log packets
+ */
+@Xilinx_MaxLatency(64)
+@Xilinx_ControlWidth(1)
+extern void logFid_reg_raw(in bit<1> index,
+                             in FlowId_t newVal,
+                             in FlowId_t incVal,
+                             in bit<8> opCode,
+                             out FlowId_t result);
 
 /* timerFid register:
  *   - Track the flowID to sample with the timer events
@@ -117,6 +131,20 @@ extern void windowSum_reg_multi_raws(in FlowId_t index_0,
                                      in bit<8> opCode_2,
                                      out ByteCnt_t result);
 
+@Xilinx_MaxLatency(1)
+@Xilinx_ControlWidth(0)
+extern void now_timestamp(in bit<1> valid, out bit<64> result);
+
+/* lastSample register:
+ *   - the last windowSum sample per flow
+ */
+@Xilinx_MaxLatency(64)
+@Xilinx_ControlWidth(L2_NUM_SHIFT_REGS)
+extern void lastSample_reg_rw(in FlowId_t index,
+                              in ByteCnt_t newVal,
+                              in bit<8> opCode,
+                              out ByteCnt_t result);
+
 // standard Ethernet header
 header Ethernet_h { 
     EthAddr_t dstAddr; 
@@ -140,10 +168,18 @@ header IPv4_h {
     IPv4Addr_t dstAddr;
 }
 
+// header to log window sum samples
+header Log_h {
+    bit<8> flowID;
+    ByteCnt_t windowSum;
+    bit<64> tstamp;
+}
+
 // List of all recognized headers
 struct Parsed_packet { 
     Ethernet_h ethernet; 
     IPv4_h ip;
+    Log_h log;
 }
 
 // user defined metadata: can be used to shared information between
@@ -170,12 +206,18 @@ parser TopParser(packet_in b,
         digest_data.unused = 0;
         transition select(p.ethernet.etherType) {
             IPV4_TYPE: parse_ipv4;
+            LOG_TYPE: parse_log;
             default: accept;
         }
     }
 
     state parse_ipv4 {
         b.extract(p.ip);
+        transition accept;
+    }
+
+    state parse_log {
+        b.extract(p.log);
         transition accept;
     }
 
@@ -220,6 +262,10 @@ control TopPipe(inout Parsed_packet p,
     apply {
         // configure the period of the timer events
         period_reg_rw(0, 0, REG_READ, sume_metadata.timer_period);
+        // generate log packets
+        if (sume_metadata.timer_trigger == 1) {
+            sume_metadata.gen_packet = 1;
+        }
 
         pkt_flowID = 0; // default
 
@@ -227,6 +273,11 @@ control TopPipe(inout Parsed_packet p,
             // set destination port and flowID
             ipv4_forward.apply();
             lookup_pkt_flowID.apply();
+        }
+        else if (p.log.isValid()) {
+            sume_metadata.dst_port = LOG_PORT;
+            // alternate between flows
+            logFid_reg_raw(0, 0, 1, REG_ADD, pkt_flowID);
         }
 
         // default values
@@ -236,6 +287,7 @@ control TopPipe(inout Parsed_packet p,
         FlowId_t index_2 = 0; ByteCnt_t data_2 = 0; bit<8> opCode_2 = REG_NULL;
         // compute the sum of bytes over a recent amount of time
         if (sume_metadata.timer_trigger == 1) {
+            // alternate between flows
             timerFid_reg_raw(0, 0, 1, REG_ADD, timer_flowID);
             index_0 = timer_flowID;
             data_0 = 0;
@@ -260,8 +312,12 @@ control TopPipe(inout Parsed_packet p,
             flowBytes_shift_reg(timer_flowID, localSum, localSum_old);
         }
 
+        // reset defaults
+        index_0 = 0; data_0 = 0; opCode_0 = REG_NULL;
+        index_1 = 0; data_1 = 0; opCode_1 = REG_NULL;
+        index_2 = 0; data_2 = 0; opCode_2 = REG_NULL;
         // compute the sum of bytes over a recent amount of time
-        if (p.ip.isValid()) {
+        if (p.ip.isValid() || p.log.isValid()) {
             // high priority operation
             index_0 = pkt_flowID;
             data_0 = 0;
@@ -287,7 +343,20 @@ control TopPipe(inout Parsed_packet p,
                                  index_2, data_2, opCode_2,
                                  windowSum);
 
-        // Can now use windowSum to make forwarding decisions ...
+        // fill out log header fields
+        if (p.log.isValid()) {
+            p.log.flowID = (bit<8>)pkt_flowID;
+            p.log.windowSum = windowSum;
+            now_timestamp(1, p.log.tstamp);
+            ByteCnt_t prev_sample;
+            // record this sample
+            lastSample_reg_rw(pkt_flowID, windowSum, REG_READ_WRITE, prev_sample);
+            if (windowSum == prev_sample) {
+                // only transmit log packets that contain new samples
+                sume_metadata.dst_port = 0;
+            }
+        }
+       
     }
 }
 
@@ -301,6 +370,7 @@ control TopDeparser(packet_out b,
     apply {
         b.emit(p.ethernet); 
         b.emit(p.ip); 
+        b.emit(p.log); 
     }
 }
 
