@@ -54,18 +54,18 @@ module @MODULE_NAME@
     parameter L2_DEPTH = @L2_DEPTH@,
     parameter INDEX_WIDTH = @INDEX_WIDTH@,
     parameter DATA_WIDTH = @DATA_WIDTH@,
-    parameter NUM_SHIFT_REGS = @NUM_SHIFT_REGS@
+    parameter NUM_SHIFT_REGS = @NUM_SHIFT_REGS@,
+    parameter INPUT_WIDTH = INDEX_WIDTH + DATA_WIDTH
 )
 (
     // Data Path I/O
     input                                   clk_lookup,
     input                                   rst,
     input                                   tuple_in_@EXTERN_NAME@_input_VALID,
-    input   [DATA_WIDTH:0]                  tuple_in_@EXTERN_NAME@_input_DATA,
+    input   [INPUT_WIDTH:0]                 tuple_in_@EXTERN_NAME@_input_DATA,
     output                                  tuple_out_@EXTERN_NAME@_output_VALID,
     output  [DATA_WIDTH-1:0]                tuple_out_@EXTERN_NAME@_output_DATA
 );
-
 
     localparam SR_DEPTH = 2**L2_DEPTH;
 
@@ -73,99 +73,137 @@ module @MODULE_NAME@
     localparam SR_FILL = 0;
     localparam SR_FULL = 1;
 
-    wire valid_in;
-    wire statefulValid_in;
+    wire                   valid_in;
+    wire                   statefulValid_in;
+    wire [INDEX_WIDTH-1:0] index_in;
+    wire [DATA_WIDTH-1:0]  data_in;
 
-    reg [DATA_WIDTH-1:0]          result_r, result_r_next;
-    reg                           result_valid_r, result_valid_r_next;
-
+    reg [DATA_WIDTH-1:0]  result_r, result_r_next;
+    reg                   result_valid_r, result_valid_r_next;
 
     // data plane state machine signals
-    reg                           sr_state, sr_state_next;
-    reg [L2_DEPTH:0]              sr_count_r, sr_count_r_next;
+    reg [NUM_SHIFT_REGS-1:0]      sr_state, sr_state_next;
+    reg [L2_DEPTH:0]              sr_count_r       [NUM_SHIFT_REGS-1:0];
+    reg [L2_DEPTH:0]              sr_count_r_next  [NUM_SHIFT_REGS-1:0];
 
     // shift register signals
-    wire [DATA_WIDTH-1:0] sr_data_out;
-    wire [DATA_WIDTH-1:0] sr_data_in;
-    wire sr_full;
-    wire sr_empty;
-    wire sr_wr_en;
-    reg sr_rd_en;
-
-    //// Input buffer to hold requests ////
-    fallthrough_small_fifo
-    #(
-        .WIDTH(DATA_WIDTH),
-        .MAX_DEPTH_BITS(L2_DEPTH)
-    )
-    shift_reg_fifo
-    (
-       // Outputs
-       .dout                           (sr_data_out),
-       .full                           (sr_full),
-       .nearly_full                    (),
-       .prog_full                      (),
-       .empty                          (sr_empty),
-       // Inputs
-       .din                            (sr_data_in),
-       .wr_en                          (sr_wr_en),
-       .rd_en                          (sr_rd_en),
-       .reset                          (rst),
-       .clk                            (clk_lookup)
-    );
+    wire [DATA_WIDTH-1:0] sr_data_out [NUM_SHIFT_REGS-1:0];
+    reg  [DATA_WIDTH-1:0] sr_data_in  [NUM_SHIFT_REGS-1:0];
+    wire [NUM_SHIFT_REGS-1:0] sr_full;
+    wire [NUM_SHIFT_REGS-1:0] sr_empty;
+    reg  [NUM_SHIFT_REGS-1:0] sr_wr_en;
+    reg  [NUM_SHIFT_REGS-1:0] sr_rd_en;
 
     // logic to parse inputs
     assign valid_in = tuple_in_@EXTERN_NAME@_input_VALID;
-    assign {statefulValid_in, sr_data_in} = tuple_in_@EXTERN_NAME@_input_DATA;
+    assign {statefulValid_in, index_in, data_in} = tuple_in_@EXTERN_NAME@_input_DATA;
 
-    // logic to write to shift register
-    assign sr_wr_en = valid_in & statefulValid_in;
+    integer j;
+    /* Logic to drive shift register inputs */
+    always@(*) begin
+        for (j=0; j<NUM_SHIFT_REGS; j=j+1) begin
+            if (j == index_in) begin
+                sr_data_in[j] = data_in;
+                sr_wr_en[j] = valid_in & statefulValid_in;
+            end
+            else begin
+                sr_data_in[j] = 0;
+                sr_wr_en[j] = 0;
+            end
+        end
+    end
 
-    /* Shift Register Read State Machine */ 
-    always @(*) begin
-       // default values
-       sr_state_next = sr_state;
-       sr_count_r_next = sr_count_r;
-       sr_rd_en = 0;
+    /* Generate the parallel shift registers */
+    genvar i;
+    generate
+    for (i=0; i<NUM_SHIFT_REGS; i=i+1) begin: shift_registers
 
-       // output signals
-       result_valid_r_next = valid_in;
-       result_r_next = 0;
+        //// Shift Register ////
+        fallthrough_small_fifo
+        #(
+            .WIDTH(DATA_WIDTH),
+            .MAX_DEPTH_BITS(L2_DEPTH)
+        )
+        shift_reg_fifo
+        (
+           // Outputs
+           .dout                           (sr_data_out[i]),
+           .full                           (sr_full[i]),
+           .nearly_full                    (),
+           .prog_full                      (),
+           .empty                          (sr_empty[i]),
+           // Inputs
+           .din                            (sr_data_in[i]),
+           .wr_en                          (sr_wr_en[i]),
+           .rd_en                          (sr_rd_en[i]),
+           .reset                          (rst),
+           .clk                            (clk_lookup)
+        );
 
-       case(sr_state)
-           SR_FILL: begin
-               /* Shift register needs to fill up first */
-               if (sr_wr_en) begin
-                   sr_count_r_next = sr_count_r + 1;
-                   if (sr_count_r == SR_DEPTH-1) begin
-                       sr_state_next = SR_FULL;
+        /* Shift Register Read State Machine */ 
+        always @(*) begin
+           // default values
+           sr_state_next[i] = sr_state[i];
+           sr_count_r_next[i] = sr_count_r[i];
+           sr_rd_en[i] = 0;
+
+           case(sr_state[i])
+               SR_FILL: begin
+                   /* Shift register needs to fill up first */
+                   if (sr_wr_en[i]) begin
+                       sr_count_r_next[i] = sr_count_r[i] + 1;
+                       if (sr_count_r[i] == SR_DEPTH-1) begin
+                           sr_state_next[i] = SR_FULL;
+                       end
                    end
                end
-           end
 
-           SR_FULL: begin
-               /* Shift register is full */
-               if (sr_wr_en) begin
-                   sr_rd_en = 1;
-                   result_r_next = sr_data_out; 
+               SR_FULL: begin
+                   /* Shift register is full */
+                   if (sr_wr_en[i]) begin
+                       sr_rd_en[i] = 1;
+                       // NOTE: it should not be possible for shift reg to be empty here
+                   end
                end
+           endcase // case(sr_state[i])
+        end // always @ (*)
+
+        always @(posedge clk_lookup) begin
+           if(rst) begin
+              sr_state[i] <= SR_FILL;
+              sr_count_r[i] <= 0;
            end
-       endcase // case(sr_state)
+           else begin
+              sr_state[i] <= sr_state_next[i];
+              sr_count_r[i] <= sr_count_r_next[i];
+           end
+        end
+
+    end
+    endgenerate
+
+    integer k;
+    /* State Machine to drive outputs */
+    always @(*) begin
+        // default values
+        result_valid_r_next = valid_in;
+        result_r_next = 0;
+        for (k=0; k<NUM_SHIFT_REGS; k=k+1) begin
+            if (sr_wr_en[k] && (sr_state[k] == SR_FULL)) begin
+                result_r_next = sr_data_out[k];
+            end
+        end
     end // always @ (*)
 
     always @(posedge clk_lookup) begin
-       if(rst) begin
-          sr_state <= SR_FILL;
-          sr_count_r <= 0;
-          result_valid_r <= 0;
-          result_r <= 0;
-       end
-       else begin
-          sr_state <= sr_state_next;
-          sr_count_r <= sr_count_r_next;
-          result_valid_r <= result_valid_r_next;
-          result_r <= result_r_next;
-       end
+        if(rst) begin
+            result_valid_r <= 0;
+            result_r <= 0;
+        end
+        else begin
+            result_valid_r <= result_valid_r_next;
+            result_r <= result_r_next;
+        end
     end
 
     // Wire up the outputs
