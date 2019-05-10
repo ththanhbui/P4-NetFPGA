@@ -61,12 +61,11 @@ const port_t LOG_PORT = 0b01000000;
 #define REG_ADD    8w2
 #define REG_SUB    8w3
 #define REG_NULL   8w4
-
 // operation to perform write but return the
 // old value in the register rather than the
 // new value
 // used for the lastSample extern
-#define REG_READ_WRITE  8w2
+#define REG_READ_WRITE  8w5
 
 /* period register:
  *   - the period at which timer events fire

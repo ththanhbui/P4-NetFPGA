@@ -52,11 +52,12 @@ extern void <name>_reg_multi_raws(in bit<INDEX_WIDTH> index_0,
 */
 
 `timescale 1 ps / 1 ps
-`define READ_OP    8'd0
-`define WRITE_OP   8'd1
-`define ADD_OP     8'd2
-`define SUB_OP     8'd3
-`define NULL_OP    8'd4
+`define READ_OP        8'd0
+`define WRITE_OP       8'd1
+`define ADD_OP         8'd2
+`define SUB_OP         8'd3
+`define NULL_OP        8'd4
+`define READ_WRITE_OP  8'd5
 
 `include "@PREFIX_NAME@_cpu_regs_defines.v"
 module @MODULE_NAME@ 
@@ -407,7 +408,7 @@ module @MODULE_NAME@
                     // stay in same state
                     // assuming it's ok to submit back to back write ops
                 end
-                else if ( (opCode == `READ_OP) || (opCode == `ADD_OP) || (opCode == `SUB_OP)) begin
+                else if ( (opCode == `READ_OP) || (opCode == `ADD_OP) || (opCode == `SUB_OP) || (opCode == `READ_WRITE_OP)) begin
                     d_addr_in_bram = index;
                     d_addr_in_bram_r_next = index;
                     index_r_next = index;
@@ -444,6 +445,13 @@ module @MODULE_NAME@
                         d_addr_in_bram_r_next = index_r;
                         d_data_in_bram = d_data_out_bram - data_r;
                         result_r_next = d_data_out_bram - data_r;
+                    end
+                    else if (opCode_r == `READ_WRITE_OP) begin
+                        d_we_bram = 1;
+                        d_addr_in_bram = index_r;
+                        d_addr_in_bram_r_next = index_r;
+                        d_data_in_bram = data_r;
+                        result_r_next = d_data_out_bram;
                     end
                     else begin
                         $display("ERROR: rmw_state = WAIT_BRAM, unsupported opCode: %0d\n", opCode_r);
