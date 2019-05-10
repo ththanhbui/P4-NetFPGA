@@ -28,7 +28,7 @@
 //
 
 /*
- * A template P4 project for the SUME Event Switch architecture.
+ * Compute per-flow rates using a shift register extern.
  */
 
 
@@ -316,7 +316,7 @@ control TopPipe(inout Parsed_packet p,
         index_0 = 0; data_0 = 0; opCode_0 = REG_NULL;
         index_1 = 0; data_1 = 0; opCode_1 = REG_NULL;
         index_2 = 0; data_2 = 0; opCode_2 = REG_NULL;
-        // compute the sum of bytes over a recent amount of time
+        // set metadata to update the windowSum
         if (p.ip.isValid() || p.log.isValid()) {
             // high priority operation
             index_0 = pkt_flowID;
