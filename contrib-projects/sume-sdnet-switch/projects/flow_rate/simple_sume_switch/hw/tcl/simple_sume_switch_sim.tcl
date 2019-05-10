@@ -179,4 +179,10 @@ add_wave $sume_event_switch/event_merger_inst/
 add_wave_divider {Event Output Queues Signals}
 add_wave $sume_event_switch/output_queues_inst/
 
+add_wave_divider {flowBytes Shift Register Signals}
+add_wave $sume_event_switch/SimpleSumeSwitch_inst/flowBytes_shift_reg_0
+
+add_wave_divider {windowSum Register}
+add_wave $sume_event_switch/SimpleSumeSwitch_inst/windowSum_reg_multi_raws_0
+
 run 65us
