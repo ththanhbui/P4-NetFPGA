@@ -45,7 +45,7 @@
 `timescale 1 ps / 1 ps
 `define READ_OP         8'd0
 `define WRITE_OP        8'd1
-`define READ_WRITE_OP   8'd2
+`define READ_WRITE_OP   8'd5
 
 `include "@PREFIX_NAME@_cpu_regs_defines.v"
 module @MODULE_NAME@ 
