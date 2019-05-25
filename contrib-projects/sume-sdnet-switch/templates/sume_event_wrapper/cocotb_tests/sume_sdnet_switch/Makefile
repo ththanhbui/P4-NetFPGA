@@ -12,7 +12,7 @@ VERILOG_SOURCES += ../../hdl/axis_pkt_generator.v
 VERILOG_SOURCES += ../../hdl/input_arbiter.v
 VERILOG_SOURCES += ../../hdl/timer_module.v
 VERILOG_SOURCES += ../../hdl/event_merger.v
-VERILOG_SOURCES += ../../hdl/XilinxSwitch_dummy.v
+VERILOG_SOURCES += ../../hdl/SimpleSumeSwitch_dummy.v
 VERILOG_SOURCES += ../../hdl/event_output_queues.v
 VERILOG_SOURCES += ../../hdl/sume_event_switch.v
 
