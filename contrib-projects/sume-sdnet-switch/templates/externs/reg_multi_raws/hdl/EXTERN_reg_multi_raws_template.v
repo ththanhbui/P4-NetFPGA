@@ -58,6 +58,8 @@ extern void <name>_reg_multi_raws(in bit<INDEX_WIDTH> index_0,
 `define SUB_OP         8'd3
 `define NULL_OP        8'd4
 `define READ_WRITE_OP  8'd5
+`define ADD_SAT_OP     8'd6
+`define SUB_SAT_OP     8'd7
 
 `include "@PREFIX_NAME@_cpu_regs_defines.v"
 module @MODULE_NAME@ 
@@ -103,6 +105,9 @@ module @MODULE_NAME@
     output                                    control_S_AXI_AWREADY
 
 );
+
+    localparam MAX_VAL = 2**REG_WIDTH-1;
+    localparam MIN_VAL = 0;
 
     localparam L2_PKT_FIFO_DEPTH = 6;
     localparam L2_META_FIFO_DEPTH = 6;
@@ -408,7 +413,7 @@ module @MODULE_NAME@
                     // stay in same state
                     // assuming it's ok to submit back to back write ops
                 end
-                else if ( (opCode == `READ_OP) || (opCode == `ADD_OP) || (opCode == `SUB_OP) || (opCode == `READ_WRITE_OP)) begin
+                else if ( (opCode == `READ_OP) || (opCode == `ADD_OP) || (opCode == `SUB_OP) || (opCode == `READ_WRITE_OP) || (opCode == `ADD_SAT_OP) || (opCode == `SUB_SAT_OP)) begin
                     d_addr_in_bram = index;
                     d_addr_in_bram_r_next = index;
                     index_r_next = index;
@@ -452,6 +457,32 @@ module @MODULE_NAME@
                         d_addr_in_bram_r_next = index_r;
                         d_data_in_bram = data_r;
                         result_r_next = d_data_out_bram;
+                    end
+                    else if (opCode_r == `ADD_SAT_OP) begin
+                        d_we_bram = 1;
+                        d_addr_in_bram = index_r;
+                        d_addr_in_bram_r_next = index_r;
+                        if (data_r > (MAX_VAL - d_data_out_bram)) begin
+                            d_data_in_bram = MAX_VAL;
+                            result_r_next = MAX_VAL;
+                        end
+                        else begin
+                            d_data_in_bram = d_data_out_bram + data_r;
+                            result_r_next = d_data_out_bram + data_r;
+                        end
+                    end
+                    else if (opCode_r == `SUB_SAT_OP) begin
+                        d_we_bram = 1;
+                        d_addr_in_bram = index_r;
+                        d_addr_in_bram_r_next = index_r;
+                        if (data_r > d_data_out_bram) begin
+                            d_data_in_bram = MIN_VAL;
+                            result_r_next = MIN_VAL;
+                        end
+                        else begin
+                            d_data_in_bram = d_data_out_bram - data_r;
+                            result_r_next = d_data_out_bram - data_r;
+                        end
                     end
                     else begin
                         $display("ERROR: rmw_state = WAIT_BRAM, unsupported opCode: %0d\n", opCode_r);
