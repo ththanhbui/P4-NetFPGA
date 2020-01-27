@@ -215,6 +215,7 @@ parser TopParser(packet_in b,
                  out user_metadata_t user_metadata,
                  out digest_data_t digest_data,
                  inout sume_metadata_t sume_metadata) {
+    
     state start {
         b.extract(p.ethernet);
         user_metadata.unused = 0;
@@ -289,21 +290,21 @@ control TopPipe(inout Parsed_packet p,
         }
     }
 
-    table retransmit {
-        key = { digest_data.flow_id: exact; }
+    table forward {
+        key = { p.ethernet.dstAddr: exact; }
 
         actions = {
+            set_output_port;
             NoAction;
         }
         size = 64;
         default_action = NoAction;
     }
 
-    table forward {
-        key = { p.ethernet.dstAddr: exact; }
+    table retransmit {
+        key = { digest_data.flow_id: exact; }
 
         actions = {
-            set_output_port;
             NoAction;
         }
         size = 64;
