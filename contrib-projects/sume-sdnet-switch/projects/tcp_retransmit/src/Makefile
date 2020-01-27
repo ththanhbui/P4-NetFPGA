@@ -1,7 +1,5 @@
-#!/usr/bin/env python
-
 #
-# Copyright (c) 2015 University of Cambridge
+# Copyright (c) 2017 Stephen Ibanez
 # All rights reserved.
 #
 # This software was developed by Stanford University and the University of Cambridge Computer Laboratory 
@@ -29,12 +27,13 @@
 # @NETFPGA_LICENSE_HEADER_END@
 #
 
-from subprocess import Popen, PIPE
 
-proc = Popen(["ifconfig","eth1","192.168.100.1"], stdout=PIPE)
-proc = Popen(["ifconfig","eth2","192.168.101.1"], stdout=PIPE)
-proc = Popen(["ifconfig","nf0","192.168.200.1"], stdout=PIPE)
-proc = Popen(["ifconfig","nf1","192.168.201.1"], stdout=PIPE)
-proc = Popen(["ifconfig","nf2","192.168.202.1"], stdout=PIPE)
-proc = Popen(["ifconfig","nf3","192.168.203.1"], stdout=PIPE)
+# Makefile to convert the P4 into PX and P4 commands into SDNet tables
+
+all:
+	p4c-sdnet -o ${P4_PROJECT_NAME}.sdnet --sdnet_info .sdnet_switch_info.dat ${P4_PROJECT_NAME}.p4
+	${SUME_SDNET}/bin/p4_px_tables.py commands.txt .sdnet_switch_info.dat
+
+clean:
+	rm -f *.sdnet *.tbl .sdnet_switch_info.dat
 

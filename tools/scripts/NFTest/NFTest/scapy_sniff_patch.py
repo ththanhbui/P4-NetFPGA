@@ -90,7 +90,7 @@ L2socket: use the provided L2socket
                     stopperStoptime = time.time()+stopperTimeout
                     remainStopper = stopperStoptime-time.time()
 
-                sel = scapy.select.select([s],[],[],remainStopper)
+                sel = scapy.select([s],[],[],remainStopper)
                 if s not in sel[0]:
                     if stopper and stopper():
                         break

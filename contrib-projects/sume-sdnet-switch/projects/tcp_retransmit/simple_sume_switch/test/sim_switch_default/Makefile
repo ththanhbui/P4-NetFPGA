@@ -1,7 +1,5 @@
-#!/usr/bin/env python
-
 #
-# Copyright (c) 2015 University of Cambridge
+# Copyright (c) 2017 Stephen Ibanez
 # All rights reserved.
 #
 # This software was developed by Stanford University and the University of Cambridge Computer Laboratory 
@@ -29,12 +27,14 @@
 # @NETFPGA_LICENSE_HEADER_END@
 #
 
-from subprocess import Popen, PIPE
 
-proc = Popen(["ifconfig","eth1","192.168.100.1"], stdout=PIPE)
-proc = Popen(["ifconfig","eth2","192.168.101.1"], stdout=PIPE)
-proc = Popen(["ifconfig","nf0","192.168.200.1"], stdout=PIPE)
-proc = Popen(["ifconfig","nf1","192.168.201.1"], stdout=PIPE)
-proc = Popen(["ifconfig","nf2","192.168.202.1"], stdout=PIPE)
-proc = Popen(["ifconfig","nf3","192.168.203.1"], stdout=PIPE)
+# Makefile to set up the simulation environment with the test data
 
+SDNET_BASE_ADDR=0x44020000
+
+all: clean
+	cp ${P4_PROJECT_DIR}/testdata/config_writes.py ./ 
+
+clean:
+	rm -f config_writes.py
+	rm -f *.pyc

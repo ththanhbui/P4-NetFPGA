@@ -312,7 +312,7 @@ control TopPipe(inout Parsed_packet p,
 
     apply {
         if (!forward.apply().hit) {
-            ;//sume_metadata.dst_port = 0b00000101;
+            ;// sume_metadata.dst_port = 0b01010101^sume_metadata.src_port ;
         }
 
         if (p.tcp.isValid()) {

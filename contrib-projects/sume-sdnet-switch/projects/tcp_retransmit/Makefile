@@ -96,10 +96,7 @@ install_sdnet: uninstall_sdnet
 uninstall_sdnet:
 	rm -rf ${TARGET}/${SDNET_OUT_DIR}
 
-workflow: core sume_sim bitfile
-
-bitfile:
-	make -C $(NF_DESIGN_DIR)
+workflow: core sume_sim
 
 core:
 	make -C $(SUME_FOLDER)

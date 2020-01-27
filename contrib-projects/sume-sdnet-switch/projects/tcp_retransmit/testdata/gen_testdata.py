@@ -286,8 +286,7 @@ pktCnt += 1
 actions = compute_tuser(
     2, tuser_map["nf1"], 0, 0
 )  # CACHE_DROP the remaining cached packets (2) from port 1
-expPkt(ack_pkt_all, "nf0", drop=False, flow_id=flow_id, tuser=actions)
-
+expPkt(ack_pkt_all, "nf0", drop=False, flow_id=flow_id, tuser=actions) 
 
 ############################################################################################################################
 
