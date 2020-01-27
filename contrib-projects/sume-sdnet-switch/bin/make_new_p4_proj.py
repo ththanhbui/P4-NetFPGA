@@ -38,13 +38,19 @@ in the projects/ directory
 import argparse, sys, re, os
 from collections import OrderedDict
 
-TEMPLATE_PROJ = "sss_p4_proj"
-
+TEMPLATE_PROJECTS = ["sss_p4_proj", "sume_event_p4_proj"]
 
 def main():
     parser = argparse.ArgumentParser()
+    parser.add_argument('--arch', type=str, default="sss", help="the desired target architecture to use")
     parser.add_argument('P4_PROJECT_NAME', type=str, help="the name of the new P4 project to create")
     args = parser.parse_args()
+
+    TEMPLATE_PROJ = "{}_p4_proj".format(args.arch)
+    if TEMPLATE_PROJ not in TEMPLATE_PROJECTS:
+        print >> sys.stderr, "ERROR: {} is an unsupported target architecture. Options are: {}".format(args.arch,
+                             [x.replace("_p4_proj", "") for x in TEMPLATE_PROJECTS])
+        sys.exit(1)
 
     templates_dir = os.path.expandvars('$SUME_SDNET/templates')
     projects_dir = os.path.expandvars('$SUME_SDNET/projects')

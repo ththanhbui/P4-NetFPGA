@@ -109,6 +109,24 @@ extern_data = {
                               "@KEY_WIDTH@" : "input_width(index)",
                               "@HASH_WIDTH@" : "annotation(BloomFilterHashWidth)",
                               "@HASH_COUNT@" : "annotation(BloomFilterHashCount)"}
+},
+
+"reg_multi_raws" : {"hdl_template_file": "externs/reg_multi_raws/hdl/EXTERN_reg_multi_raws_template.v",
+                    "replacements": {"@EXTERN_NAME@" : "extern_name",
+                                     "@MODULE_NAME@" : "module_name",
+                                     "@PREFIX_NAME@" : "prefix_name",
+                                     "@ADDR_WIDTH@" : "addr_width",
+                                     "@INDEX_WIDTH@" : "input_width(index_0)",
+                                     "@REG_WIDTH@" : "input_width(data_0)"}
+},
+
+"shift_reg" : {"hdl_template_file": "externs/shift_reg/hdl/EXTERN_shift_reg_template.v",
+               "replacements": {"@EXTERN_NAME@" : "extern_name",
+                                "@MODULE_NAME@" : "module_name",
+                                "@INDEX_WIDTH@" : "input_width(index_in)",
+                                "@DATA_WIDTH@" : "input_width(data_in)",
+                                "@L2_DEPTH@" : "annotation(ShiftRegDepthL2)",
+                                "@NUM_SHIFT_REGS@" : "annotation(ShiftRegCount)"}
 }
 
 }

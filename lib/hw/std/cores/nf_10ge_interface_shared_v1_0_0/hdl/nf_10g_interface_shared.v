@@ -110,10 +110,12 @@ module nf_10g_interface_shared #(
     	output                                    S_AXI_AWREADY,
 
 	 //Serial I/O from/to transceiver
-	input 					                 rxn,
-  	input 					                 rxp,
- 	output 					                 txn,
-  	output 					                 txp	
+	input 					  rxn,
+  	input 					  rxp,
+ 	output 					  txn,
+  	output 					  txp,
+
+        output                                    signal_detect
 );
 
 // Xilinx AXIS converter creates tuser width with
@@ -235,7 +237,9 @@ nf_10g_interface_shared_block nf_10g_interface_shared_i (
      .rxn                    (rxn),
      .rxp                    (rxp),
      .txn                    (txn),
-     .txp                    (txp)  
+     .txp                    (txp),
+
+     .signal_detect          (signal_detect)
 );
 
 
