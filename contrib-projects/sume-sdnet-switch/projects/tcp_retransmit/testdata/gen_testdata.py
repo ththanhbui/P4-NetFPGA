@@ -202,7 +202,7 @@ pktCnt = 0
 # Test P4 program with different scenarios #
 ############################################
 
-# Test #1: Basic packet forwarding of the SimpleSumeSwitch-architecture-based P4 program
+# Test 1: Basic packet forwarding of the SimpleSumeSwitch-architecture-based program
 # Goal: A packet coming through the SSS architecture will come out with the digest_data modified.
 # Description:
 #   - Send 1 packet from port 0 to port 1.
@@ -215,17 +215,17 @@ pkt = (
     / TCP(sport=sport, dport=dport, flags="S", seq=curr_seq)
 )
 pkt = pad_pkt(pkt, PKT_SIZE)
-applyPkt(pkt, "nf0", pktCnt)  # send from port 0
+applyPkt(pkt, "nf0", 0)  # send from port 0
 pktCnt += 1
 
-flow_id = compute_flow_number(IP1_src, IP1_dst, 6, sport, dport)
+flow_id = compute_tuple(IP1_src, IP1_dst, 6, sport, dport)
 actions = compute_tuser(0, 0, 0, tuser_map["nf1"])  # CACHE_WRITE to port 1
 expPkt(pkt, "nf1", drop=False, flow_id=flow_id, tuser=actions)
 
 
 ############################################################################################################################
 
-# Test #2: Behaviour of the program when it receives a standard ACK packet.
+# Test 2: Behaviour of the program when it receives a standard ACK packet.
 # Goal: When the program receives an ACK packet with an ACK Number that is the next byte expected (next Sequence Number), it
 #   drops the packets that are currently cached in the cache queue.
 # Description:
@@ -286,12 +286,11 @@ pktCnt += 1
 actions = compute_tuser(
     2, tuser_map["nf1"], 0, 0
 )  # CACHE_DROP the remaining cached packets (2) from port 1
-expPkt(ack_pkt_all, "nf0", drop=False, flow_id=flow_id, tuser=actions)
-
+expPkt(ack_pkt_all, "nf0", drop=False, flow_id=flow_id, tuser=actions) 
 
 ############################################################################################################################
 
-# Test #3: Behaviour of the program when three DUP ACK packets are received.
+# Test 3: Behaviour of the program when three DUP ACK packets are received.
 # Goal: When there are DUP ACK packets received, the program exhibits the fast retransmit mechanism: the third DUP ACK packet
 #   will be sent to the source with ACK flag = 0, and the program will resend the packet with Sequence Number equals to the
 #   DUP ACK.
@@ -367,7 +366,7 @@ expPkt(dup_ack3, "nf0", drop=False, flow_id=flow_id, tuser=retransmit)
 
 ############################################################################################################################
 
-# Test #4: Behaviour of the program when a fourth DUP ACK is received.
+# Test 4: Behaviour of the program when a fourth DUP ACK is received.
 # Goal: After the program has retransmitted the required packet, if it receives the same DUP ACK (for the fourth time), it
 #   will send this packet to host as it is. This is because the problem might be due to factors other than the loss of packets
 #   at the receiver.
@@ -391,7 +390,7 @@ expPkt(dup_ack4, "nf0", drop=False, flow_id=flow_id, tuser=back_to_host)
 
 ############################################################################################################################
 
-# Test #5: Behaviour of the program when there are multiple flows.
+# Test 5: Behaviour of the program when there are multiple flows.
 # Goal: When there are multiple flows, the program only process those packets with the flow matches the specific flow_id(s)
 # that we are interested in, and have specified with our `retransmit` table in `commands.txt`.
 # # Description:

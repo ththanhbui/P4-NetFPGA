@@ -1,7 +1,6 @@
-#!/usr/bin/env python
-
 #
 # Copyright (c) 2015 University of Cambridge
+# Modified by Salvator Galea
 # All rights reserved.
 #
 # This software was developed by Stanford University and the University of Cambridge Computer Laboratory 
@@ -19,7 +18,8 @@
 # "License"); you may not use this file except in compliance with the
 # License.  You may obtain a copy of the License at:
 #
-#   http://www.netfpga-cic.org
+#   http://netfpga-cic.org
+#
 #
 # Unless required by applicable law or agreed to in writing, Work distributed
 # under the License is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR
@@ -29,12 +29,17 @@
 # @NETFPGA_LICENSE_HEADER_END@
 #
 
-from subprocess import Popen, PIPE
 
-proc = Popen(["ifconfig","eth1","192.168.100.1"], stdout=PIPE)
-proc = Popen(["ifconfig","eth2","192.168.101.1"], stdout=PIPE)
-proc = Popen(["ifconfig","nf0","192.168.200.1"], stdout=PIPE)
-proc = Popen(["ifconfig","nf1","192.168.201.1"], stdout=PIPE)
-proc = Popen(["ifconfig","nf2","192.168.202.1"], stdout=PIPE)
-proc = Popen(["ifconfig","nf3","192.168.203.1"], stdout=PIPE)
+set design [lindex $argv 0] 
+
+puts "\nOpening $design XPR project\n"
+open_project project/$design.xpr
+
+puts "\nOpening $design Implementation design\n"
+open_run impl_1
+
+puts "\nCopying top.sysdef\n"
+file copy -force ./project/$design.runs/impl_1/top.sysdef ../sw/embedded/$design.hdf
+
+exit
 
