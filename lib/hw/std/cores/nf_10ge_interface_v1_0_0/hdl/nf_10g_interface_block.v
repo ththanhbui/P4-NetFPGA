@@ -93,10 +93,11 @@ module nf_10g_interface_block #(
 	input 					                  rxn,
   	input 					                  rxp,
  	output 					                  txn,
-  	output 					                  txp	
+  	output 					                  txp,
+
+        output                                                    signal_detect
 );
 
-wire                                 			signal_detect;
 wire                                 			areset_clk156_n;
 
 // SI: Added debug probes to tx signals

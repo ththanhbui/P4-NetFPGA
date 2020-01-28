@@ -43,8 +43,9 @@
 
 
 `timescale 1 ps / 1 ps
-`define READ_OP    8'd0
-`define WRITE_OP   8'd1
+`define READ_OP         8'd0
+`define WRITE_OP        8'd1
+`define READ_WRITE_OP   8'd5
 
 `include "@PREFIX_NAME@_cpu_regs_defines.v"
 module @MODULE_NAME@ 
@@ -112,7 +113,6 @@ module @MODULE_NAME@
     // data plane state machine states
     localparam START_REQ = 0;
     localparam WAIT_BRAM = 1;
-    localparam WRITE_RESULT = 2;
 
     // control plane state machine states
     localparam WAIT_REQ = 0;
@@ -120,11 +120,13 @@ module @MODULE_NAME@
     localparam WRITE_READ_RESULT = 2;
 
     // data plane state machine signals
-    reg [2:0]                     d_state, d_state_next;
-    reg [REG_WIDTH-1:0]           result_r, result_r_next;
+    reg                           d_state, d_state_next;
     reg [1:0]                     cycle_cnt, cycle_cnt_next;
-    reg                           valid_out;
-    reg [REG_WIDTH-1:0]           result_out;
+    reg [INDEX_WIDTH-1:0]         index_r, index_r_next;
+    reg [REG_WIDTH-1:0]           newVal_r, newVal_r_next;
+    reg [OP_WIDTH-1:0]            opCode_r, opCode_r_next;
+    reg [REG_WIDTH-1:0]           result_r, result_r_next;
+    reg                           result_valid_r, result_valid_r_next;
 
     // control plane state machine signals
     reg [2:0]                     c_state, c_state_next;
@@ -133,7 +135,6 @@ module @MODULE_NAME@
     reg [1:0]                     cycle_cnt_ctrl, cycle_cnt_ctrl_next;
 
     // BRAM signals
-    /*  TODO: add support for control-plane */
     reg                       c_we_bram;
     reg                       c_en_bram;
     reg   [INDEX_WIDTH-1:0]   c_addr_in_bram, c_addr_in_bram_r, c_addr_in_bram_r_next;
@@ -327,7 +328,7 @@ module @MODULE_NAME@
    /* data plane R/W State Machine */ 
    always @(*) begin
       // default values
-      d_state_next   = d_state;
+      d_state_next = d_state;
       rd_en_fifo = 0;
       d_en_bram = 1;
 
@@ -335,21 +336,28 @@ module @MODULE_NAME@
       d_addr_in_bram = d_addr_in_bram_r;
       d_addr_in_bram_r_next = d_addr_in_bram_r;
       d_data_in_bram = 0;
-      
-      result_r_next = result_r;
-      
+
+      index_r_next = index_r;
+      newVal_r_next = newVal_r;
+      opCode_r_next = opCode_r;
+
+      // output signals
+      result_valid_r_next = 0;
+      result_r_next = 0;
+
       cycle_cnt_next = cycle_cnt;
-      valid_out = 0;
-      result_out = 0;
 
       case(d_state)
           START_REQ: begin
               if (~empty_fifo) begin
                   rd_en_fifo = 1;
                   if (statefulValid_fifo && index_fifo < REG_DEPTH) begin
-                      if (opCode_fifo == `READ_OP) begin
+                      if ( (opCode_fifo == `READ_OP) || (opCode_fifo == `READ_WRITE_OP) ) begin
                           d_addr_in_bram = index_fifo;
                           d_addr_in_bram_r_next = index_fifo;
+                          index_r_next = index_fifo;
+                          newVal_r_next = newVal_fifo;
+                          opCode_r_next = opCode_fifo;
                           d_state_next = WAIT_BRAM;
                       end
                       else if (opCode_fifo == `WRITE_OP) begin
@@ -358,17 +366,20 @@ module @MODULE_NAME@
                           d_addr_in_bram_r_next = index_fifo;
                           d_data_in_bram = newVal_fifo;
                           result_r_next = newVal_fifo;
-                          d_state_next = WRITE_RESULT;
+                          result_valid_r_next = 1;
+                          // stay in the same state
                       end
                       else begin
                           $display("ERROR: d_state = START_REQ, unsupported opCode: %0d\n", opCode_fifo);
                           result_r_next = 0;
-                          d_state_next = WRITE_RESULT;
+                          result_valid_r_next = 1;
+                          // stay in same state
                       end
                   end
                   else begin
                       result_r_next = 0;
-                      d_state_next = WRITE_RESULT;
+                      result_valid_r_next = 1;
+                      // stay in the same state
                   end
               end
           end
@@ -376,40 +387,50 @@ module @MODULE_NAME@
           WAIT_BRAM: begin
               if (cycle_cnt == 1'b1) begin // 2 cycle BRAM read latency
                   cycle_cnt_next = 0;
+                  // output the value read out of BRAM
                   result_r_next = d_data_out_bram;
-                  d_state_next = WRITE_RESULT;
+                  result_valid_r_next = 1;
+                  if (opCode_r == `READ_WRITE_OP) begin
+                      d_we_bram = 1;
+                      d_addr_in_bram = index_r;
+                      d_addr_in_bram_r_next = index_r;
+                      d_data_in_bram = newVal_r;
+                  end
+                  d_state_next = START_REQ;
               end
               else begin
                   cycle_cnt_next = cycle_cnt + 1;
               end
           end
-
-          WRITE_RESULT: begin
-             valid_out = 1;
-             result_out = result_r;
-             d_state_next = START_REQ;
-          end
       endcase // case(d_state)
    end // always @ (*)
-
-   assign tuple_out_@EXTERN_NAME@_output_VALID = valid_out;
-   assign tuple_out_@EXTERN_NAME@_output_DATA  = result_out;
 
    always @(posedge clk_lookup) begin
       if(~resetn_sync) begin
          d_state <= START_REQ;
          d_addr_in_bram_r <= 0;
+         index_r <= 0;
+         newVal_r <= 0;
+         opCode_r <= 0;
+         result_valid_r <= 0;
          result_r <= 0;
          cycle_cnt <= 0;
       end
       else begin
          d_state <= d_state_next;
          d_addr_in_bram_r <= d_addr_in_bram_r_next;
+         index_r <= index_r_next;
+         newVal_r <= newVal_r_next;
+         opCode_r <= opCode_r_next;
+         result_valid_r <= result_valid_r_next;
          result_r <= result_r_next;
          cycle_cnt <= cycle_cnt_next;
       end
    end
 
+   // Wire up the outputs
+   assign tuple_out_@EXTERN_NAME@_output_VALID = result_valid_r;
+   assign tuple_out_@EXTERN_NAME@_output_DATA  = result_r;
 
    /* control plane R/W state machine */
    always @(*) begin
